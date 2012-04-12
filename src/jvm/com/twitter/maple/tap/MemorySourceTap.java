@@ -26,7 +26,7 @@ import java.util.UUID;
 public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, RecordReader> {
     public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, Void, Object[], Void> {
 
-        private List<Tuple> tuples;
+        private transient List<Tuple> tuples;
         private String id;
 
         public MemorySourceScheme(List<Tuple> tuples, Fields fields) {

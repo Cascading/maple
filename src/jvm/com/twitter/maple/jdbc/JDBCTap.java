@@ -10,7 +10,7 @@
  * conditions, unless such conditions are required by law.
  */
 
-package com.twitter.meatlocker.jdbc;
+package com.twitter.maple.jdbc;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.tap.SinkMode;
@@ -21,7 +21,7 @@ import cascading.tap.hadoop.RecordReaderIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import cascading.tuple.TupleEntrySchemeIterator;
-import com.twitter.meatlocker.jdbc.db.DBConfiguration;
+import com.twitter.maple.jdbc.db.DBConfiguration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -47,7 +47,7 @@ import java.util.List;
  * <p/>
  * Both INSERT and UPDATE are supported through the JDBCScheme.
  * <p/>
- * By sub-classing JDBCScheme, {@link com.twitter.meatlocker.jdbc.db.DBInputFormat}, and {@link com.twitter.meatlocker.jdbc.db.DBOutputFormat},
+ * By sub-classing JDBCScheme, {@link com.twitter.maple.jdbc.db.DBInputFormat}, and {@link com.twitter.maple.jdbc.db.DBOutputFormat},
  * specific vendor features can be supported.
  * <p/>
  * Use {@link #setBatchSize(int)} to set the number of INSERT/UPDATES should be grouped together before being
@@ -56,13 +56,13 @@ import java.util.List;
  * Use {@link #executeQuery(String, int)} or {@link #executeUpdate(String)} to invoke SQL statements against
  * the underlying Table.
  * <p/>
- * Note that all classes under the {@link com.twitter.meatlocker.jdbc.db} package originated from the Hadoop project and
+ * Note that all classes under the {@link com.twitter.maple.jdbc.db} package originated from the Hadoop project and
  * retain their Apache 2.0 license though they have been heavily modified to support INSERT/UPDATE and
  * vendor specialization, and a number of other features like 'limit'.
  *
  * @see JDBCScheme
- * @see com.twitter.meatlocker.jdbc.db.DBInputFormat
- * @see com.twitter.meatlocker.jdbc.db.DBOutputFormat
+ * @see com.twitter.maple.jdbc.db.DBInputFormat
+ * @see com.twitter.maple.jdbc.db.DBOutputFormat
  */
 public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, OutputCollector> {
     /** Field LOG */

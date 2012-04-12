@@ -10,13 +10,13 @@
  * conditions, unless such conditions are required by law.
  */
 
-package com.twitter.meatlocker.jdbc;
+package com.twitter.maple.jdbc;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-import com.twitter.meatlocker.jdbc.db.DBInputFormat;
-import com.twitter.meatlocker.jdbc.db.DBOutputFormat;
+import com.twitter.maple.jdbc.db.DBInputFormat;
+import com.twitter.maple.jdbc.db.DBOutputFormat;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.scheme.Scheme;

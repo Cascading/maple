@@ -27,7 +27,7 @@
  * limitations under the License.
  */
 
-package com.twitter.meatlocker.jdbc.db;
+package com.twitter.maple.jdbc.db;
 
 import org.apache.hadoop.conf.Configuration;
 

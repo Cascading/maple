@@ -1,4 +1,4 @@
-package com.twitter.meatlocker.tap;
+package com.twitter.maple.tap;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.scheme.Scheme;
@@ -27,7 +27,6 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
     public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, Void, Object[], Void> {
 
         private transient List<Tuple> tuples;
-        private String id;
 
         public MemorySourceScheme(List<Tuple> tuples, Fields fields) {
             super(fields);

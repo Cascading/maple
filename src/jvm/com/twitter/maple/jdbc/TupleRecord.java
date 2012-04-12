@@ -10,10 +10,10 @@
  * conditions, unless such conditions are required by law.
  */
 
-package com.twitter.meatlocker.jdbc;
+package com.twitter.maple.jdbc;
 
 import cascading.tuple.Tuple;
-import com.twitter.meatlocker.jdbc.db.DBWritable;
+import com.twitter.maple.jdbc.db.DBWritable;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

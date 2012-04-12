@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.twitter.meatlocker.jdbc;
+package com.twitter.maple.jdbc;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.tap.Tap;

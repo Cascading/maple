@@ -1,4 +1,4 @@
-package com.twitter.meatlocker.tap;
+package com.twitter.maple.tap;
 
 import cascading.tuple.Tuple;
 import org.apache.commons.codec.binary.Base64;

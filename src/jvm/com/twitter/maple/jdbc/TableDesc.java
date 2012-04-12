@@ -10,7 +10,7 @@
  * conditions, unless such conditions are required by law.
  */
 
-package com.twitter.meatlocker.jdbc;
+package com.twitter.maple.jdbc;
 
 import cascading.util.Util;
 

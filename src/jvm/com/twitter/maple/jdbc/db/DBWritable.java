@@ -10,7 +10,7 @@
  * conditions, unless such conditions are required by law.
  */
 
-package com.twitter.meatlocker.jdbc.db;
+package com.twitter.maple.jdbc.db;
 
 import org.apache.hadoop.io.Writable;
 

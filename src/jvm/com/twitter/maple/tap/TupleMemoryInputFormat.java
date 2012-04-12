@@ -7,12 +7,15 @@ import org.apache.hadoop.io.serializer.Deserializer;
 import org.apache.hadoop.io.serializer.SerializationFactory;
 import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.hadoop.mapred.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TupleMemoryInputFormat implements InputFormat<TupleWrapper, NullWritable> {
+    private static final Logger logger = LoggerFactory.getLogger(TupleMemoryInputFormat.class);
 
     public static final String ENCODING = "US-ASCII";
     public static final String TUPLES_PROPERTY = "memory.format.tuples";
@@ -94,30 +97,29 @@ public class TupleMemoryInputFormat implements InputFormat<TupleWrapper, NullWri
 
 
     public static String encodeBytes(byte[] bytes) {
-        String byteString = null;
         try {
-            byteString = new String(Base64.encodeBase64(bytes), "US-ASCII");
+            return new String(Base64.encodeBase64(bytes), "US-ASCII");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        return byteString;
     }
 
     public static byte[] decodeBytes(String str) {
-        byte[] decoded = null;
         try {
             byte[] bytes = str.getBytes(ENCODING);
-            decoded = Base64.decodeBase64(bytes);
+            return Base64.decodeBase64(bytes);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        return decoded;
-    }
-
+     }
 
     public static void storeTuples(JobConf conf, String key, List<Tuple> tuples) {
         SerializationFactory factory = new SerializationFactory(conf);
+
+        logger.debug("Storing tuples: {}", tuples);
         Serializer<Tuple> serializer = factory.getSerializer(Tuple.class);
+
+        logger.debug("Storing tuples with serializer: {}", serializer);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         try {

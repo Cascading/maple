@@ -18,19 +18,33 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, RecordReader> {
+public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, RecordReader> implements
+    Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(MemorySourceTap.class);
+
     public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, Void, Object[], Void> {
+        private static final Logger logger = LoggerFactory.getLogger(MemorySourceScheme.class);
 
-        private transient List<Tuple> tuples;
+        private List<Tuple> tuples;
+        private final String id;
 
-        public MemorySourceScheme(List<Tuple> tuples, Fields fields) {
+        public MemorySourceScheme(List<Tuple> tuples, Fields fields, String id) {
             super(fields);
+            assert tuples != null;
             this.tuples = tuples;
+            this.id = id;
+        }
+
+        public String getId() {
+            return this.id;
         }
 
         public List<Tuple> getTuples()
@@ -40,7 +54,7 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
 
         @Override
         public void sourceConfInit(HadoopFlowProcess flowProcess, Tap tap, JobConf conf) {
-            FileInputFormat.setInputPaths( conf, "/" + UUID.randomUUID().toString());
+            FileInputFormat.setInputPaths(conf, this.id);
             conf.setInputFormat(TupleMemoryInputFormat.class);
             TupleMemoryInputFormat.storeTuples(conf, TupleMemoryInputFormat.TUPLES_PROPERTY, this.tuples);
         }
@@ -84,11 +98,12 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
 
     }
 
-    private String id = UUID.randomUUID().toString();
+    private final String id;
     private transient FileStatus[] statuses;
 
     public MemorySourceTap(List<Tuple> tuples, Fields fields) {
-        super(new MemorySourceScheme(tuples, fields));
+        super(new MemorySourceScheme(tuples, fields, "/" + UUID.randomUUID().toString()));
+        this.id = ((MemorySourceScheme) this.getScheme()).getId();
     }
 
     @Override
@@ -97,7 +112,7 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
     }
 
     public Path getPath() {
-        return new Path("/" + id);
+        return new Path(id);
     }
 
     @Override

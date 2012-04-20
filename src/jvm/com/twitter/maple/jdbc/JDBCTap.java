@@ -13,6 +13,7 @@
 package com.twitter.maple.jdbc;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.hadoop.HadoopUtil;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
@@ -35,6 +36,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class JDBCTap is a {@link Tap} sub-class that provides read and write access to a RDBMS via JDBC drivers.
@@ -268,17 +270,40 @@ public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, Outpu
         return true;
     }
 
+    private JobConf getSourceConf( HadoopFlowProcess flowProcess, JobConf conf, String property )
+        throws IOException {
+        Map<String, String> priorConf = HadoopUtil.deserializeMapBase64( property, true );
+        return flowProcess.mergeMapIntoConfig( conf, priorConf );
+    }
+
     @Override
-    public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess, RecordReader input ) throws IOException {
-        if (input != null)
+    public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess, RecordReader input )
+        throws IOException {
+
+        // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
+        // during processing of an InputSplit
+        if( input != null )
             return new TupleEntrySchemeIterator( flowProcess, getScheme(), new RecordReaderIterator( input ) );
 
-        JobConf conf = new JobConf( flowProcess.getJobConf() );
+        Map<Object, Object> properties = HadoopUtil.createProperties(flowProcess.getJobConf());
+
+        properties.remove( "mapred.input.dir" );
+
+        JobConf conf = HadoopUtil.createJobConf( properties, null );
+
+        // allows client side config to be used cluster side
+        String property = flowProcess.getJobConf()
+            .getRaw( "cascading.step.accumulated.source.conf." + getIdentifier() );
+
+        if( property != null ) {
+            conf = getSourceConf( flowProcess, conf, property );
+            flowProcess = new HadoopFlowProcess( flowProcess, conf );
+        }
 
         LOG.info("Opening JDBCTap for read.");
 
         return new TupleEntrySchemeIterator( flowProcess, getScheme(),
-            new MultiRecordReaderIterator(flowProcess, this, conf ) );
+            new MultiRecordReaderIterator(flowProcess, this ) );
     }
 
     @Override

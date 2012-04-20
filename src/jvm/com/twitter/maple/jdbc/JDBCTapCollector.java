@@ -66,8 +66,12 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
     }
 
     @Override
-    public void prepare() throws IOException {
-        initialize();
+    public void prepare() {
+        try {
+            initialize();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         super.prepare();
     }

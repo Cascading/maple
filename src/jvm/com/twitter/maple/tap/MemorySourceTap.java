@@ -1,6 +1,7 @@
 package com.twitter.maple.tap;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.hadoop.HadoopUtil;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, RecordReader> implements
@@ -33,7 +35,7 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
     public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, Void, Object[], Void> {
         private static final Logger logger = LoggerFactory.getLogger(MemorySourceScheme.class);
 
-        private List<Tuple> tuples;
+        private transient List<Tuple> tuples;
         private final String id;
 
         public MemorySourceScheme(List<Tuple> tuples, Fields fields, String id) {
@@ -129,15 +131,39 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         return id.equals(other.id);
     }
 
+    private JobConf getSourceConf( HadoopFlowProcess flowProcess, JobConf conf, String property ) throws IOException {
+        Map<String, String> priorConf = HadoopUtil.deserializeMapBase64( property, true );
+        return flowProcess.mergeMapIntoConfig( conf, priorConf );
+    }
+
     @Override
     public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess, RecordReader input ) throws IOException {
-        if (input != null)
-            return new TupleEntrySchemeIterator( flowProcess, getScheme(), new RecordReaderIterator( input ) );
+        String identifier = (String) flowProcess.getProperty( "cascading.source.path" );
 
-        JobConf conf = new JobConf( flowProcess.getJobConf() );
+        // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
+        // during processing of an InputSplit
+        if( input != null )
+            return new TupleEntrySchemeIterator( flowProcess, getScheme(), new RecordReaderIterator( input ), identifier );
 
-        return new TupleEntrySchemeIterator(flowProcess, getScheme(),
-            new MultiRecordReaderIterator(flowProcess, this, conf), "MemoryTap: " + getIdentifier());
+        Map<Object, Object> properties = HadoopUtil.createProperties(flowProcess.getJobConf());
+
+        properties.remove( "mapred.input.dir" );
+
+        JobConf conf = HadoopUtil.createJobConf( properties, null );
+
+        // allows client side config to be used cluster side
+        String property = flowProcess.getJobConf().getRaw( "cascading.step.accumulated.source.conf." + getIdentifier() );
+
+        if( property != null ) {
+            conf = getSourceConf( flowProcess, conf, property );
+            flowProcess = new HadoopFlowProcess( flowProcess, conf );
+        }
+
+        // this is only called when, on the client side, a user wants to open a tap for writing on a client
+        // MultiRecordReader will create a new RecordReader instance for use across any file parts
+        // or on the cluster side during accumulation for a Join
+        return new TupleEntrySchemeIterator( flowProcess, getScheme(),
+            new MultiRecordReaderIterator( flowProcess, this, conf ), "MemoryTap: " + getIdentifier() );
     }
 
     @Override

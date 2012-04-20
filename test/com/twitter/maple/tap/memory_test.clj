@@ -1,8 +1,9 @@
 (ns com.twitter.maple.tap.memory-test
+  (:use clojure.test)
   (:require [clojure.string :as s])
   (:import [java.util ArrayList]
            [com.twitter.maple.tap MemorySourceTap]
-           [cascading.tuple Fields]
+           [cascading.tuple Fields Tuple]
            [cascading.flow.hadoop HadoopFlowProcess]
            [org.apache.hadoop.mapred JobConf]))
 
@@ -35,12 +36,33 @@
     (doall (for [wrapper (iterator-seq it)]
              (into [] (.getTuple wrapper))))))
 
-(comment
-  "TODO: Implement coerceToTuple and fields."
-  (defn memory-tap
-    ([tuples] (memory-tap Fields/ALL tuples))
-    ([fields-in tuple-seq]
-       (let [tuples (->> tuple-seq
-                         (map #(Util/coerceToTuple %))
-                         (ArrayList.))]
-         (MemorySourceTap. tuples (fields fields-in))))))
+(defn collectify [obj]
+  (if (or (sequential? obj)
+          (instance? java.util.List obj))
+    obj, [obj]))
+
+(defn fields
+  {:tag Fields}
+  [obj]
+  (if (or (nil? obj) (instance? Fields obj))
+    obj
+    (let [obj (collectify obj)]
+      (if (empty? obj)
+        Fields/ALL ; TODO: add Fields/NONE support
+        (Fields. (into-array String obj))))))
+
+(defn coerce-to-tuple [o]
+  (Tuple. (if (instance? java.util.List o)
+            (.toArray o)
+            0)))
+
+(defn memory-tap
+  ([tuples] (memory-tap Fields/ALL tuples))
+  ([fields-in tuple-seq]
+     (let [tuples (ArrayList. (map coerce-to-tuple tuple-seq))]
+       (MemorySourceTap. tuples (fields fields-in)))))
+
+(deftest round-trip-tuple-test
+  (are [coll] (= coll (tuple-seq (memory-tap coll)))
+       [[1] [2]]
+       [[1 2] [3 4]]))

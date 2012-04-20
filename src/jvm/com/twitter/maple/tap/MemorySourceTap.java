@@ -13,7 +13,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryIterator;
 import cascading.tuple.TupleEntrySchemeIterator;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -28,11 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, RecordReader> implements
+public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf,
+    RecordReader<TupleWrapper, NullWritable>> implements
     Serializable {
     private static final Logger logger = LoggerFactory.getLogger(MemorySourceTap.class);
 
-    public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, Void, Object[], Void> {
+    public static class MemorySourceScheme extends Scheme<HadoopFlowProcess, JobConf,
+        RecordReader<TupleWrapper, NullWritable>, Void, Object[], Void> {
         private static final Logger logger = LoggerFactory.getLogger(MemorySourceScheme.class);
 
         private transient List<Tuple> tuples;
@@ -49,8 +50,7 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
             return this.id;
         }
 
-        public List<Tuple> getTuples()
-        {
+        public List<Tuple> getTuples() {
             return this.tuples;
         }
 
@@ -67,7 +67,8 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         }
 
         @Override
-        public void sourcePrepare( HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall ) {
+        public void sourcePrepare( HadoopFlowProcess flowProcess, SourceCall<Object[],
+            RecordReader<TupleWrapper, NullWritable>> sourceCall ) {
             sourceCall.setContext( new Object[ 2 ] );
 
             sourceCall.getContext()[ 0 ] = sourceCall.getInput().createKey();
@@ -75,7 +76,8 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         }
 
         @Override
-        public boolean source(HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
+        public boolean source(HadoopFlowProcess flowProcess, SourceCall<Object[],
+            RecordReader<TupleWrapper, NullWritable>> sourceCall) throws IOException {
             TupleWrapper key = (TupleWrapper) sourceCall.getContext()[ 0 ];
             NullWritable value = (NullWritable) sourceCall.getContext()[ 1 ];
 
@@ -89,7 +91,8 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         }
 
         @Override
-        public void sourceCleanup( HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall ) {
+        public void sourceCleanup( HadoopFlowProcess flowProcess, SourceCall<Object[],
+            RecordReader<TupleWrapper, NullWritable>> sourceCall ) {
             sourceCall.setContext( null );
         }
 
@@ -101,7 +104,6 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
     }
 
     private final String id;
-    private transient FileStatus[] statuses;
 
     public MemorySourceTap(List<Tuple> tuples, Fields fields) {
         super(new MemorySourceScheme(tuples, fields, "/" + UUID.randomUUID().toString()));
@@ -137,13 +139,15 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
     }
 
     @Override
-    public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess, RecordReader input ) throws IOException {
+    public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess,
+        RecordReader<TupleWrapper, NullWritable> input ) throws IOException {
         String identifier = (String) flowProcess.getProperty( "cascading.source.path" );
 
         // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
         // during processing of an InputSplit
         if( input != null )
-            return new TupleEntrySchemeIterator( flowProcess, getScheme(), new RecordReaderIterator( input ), identifier );
+            return new TupleEntrySchemeIterator( flowProcess, getScheme(),
+                new RecordReaderIterator( input ), identifier );
 
         Map<Object, Object> properties = HadoopUtil.createProperties(flowProcess.getJobConf());
 
@@ -152,7 +156,8 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         JobConf conf = HadoopUtil.createJobConf( properties, null );
 
         // allows client side config to be used cluster side
-        String property = flowProcess.getJobConf().getRaw( "cascading.step.accumulated.source.conf." + getIdentifier() );
+        String property = flowProcess.getJobConf()
+            .getRaw( "cascading.step.accumulated.source.conf." + getIdentifier() );
 
         if( property != null ) {
             conf = getSourceConf( flowProcess, conf, property );
@@ -163,7 +168,7 @@ public class MemorySourceTap extends SourceTap<HadoopFlowProcess, JobConf, Recor
         // MultiRecordReader will create a new RecordReader instance for use across any file parts
         // or on the cluster side during accumulation for a Join
         return new TupleEntrySchemeIterator( flowProcess, getScheme(),
-            new MultiRecordReaderIterator( flowProcess, this, conf ), "MemoryTap: " + getIdentifier() );
+            new MultiRecordReaderIterator( flowProcess, this ), "MemoryTap: " + getIdentifier() );
     }
 
     @Override

@@ -13,7 +13,7 @@
 package com.twitter.maple.jdbc;
 
 import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.flow.hadoop.HadoopUtil;
+import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.TapException;

@@ -12,13 +12,7 @@
 
 package com.twitter.maple.jdbc;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import com.twitter.maple.jdbc.db.DBInputFormat;
-import com.twitter.maple.jdbc.db.DBOutputFormat;
-
-import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
@@ -28,9 +22,14 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
+import com.twitter.maple.jdbc.db.DBInputFormat;
+import com.twitter.maple.jdbc.db.DBOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Class JDBCScheme defines what its parent Tap will select and insert/update into the sql database.
@@ -45,7 +44,7 @@ import org.apache.hadoop.mapred.RecordReader;
  * <p/>
  * Override this class, {@link DBInputFormat}, and {@link DBOutputFormat} to specialize for a given vendor database.
  */
-public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader, OutputCollector, Object[], Object[]>
+public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]>
 {
     private Class<? extends DBInputFormat> inputFormatClass;
     private Class<? extends DBOutputFormat> outputFormatClass;
@@ -510,7 +509,8 @@ public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader,
     }
 
     @Override
-    public void sourceConfInit( HadoopFlowProcess process, Tap tap, JobConf conf ) {
+    public void sourceConfInit( FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
+        JobConf conf ) {
         int concurrentReads = ( (JDBCTap) tap ).concurrentReads;
 
         if( selectQuery != null )
@@ -526,7 +526,8 @@ public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader,
     }
 
     @Override
-    public void sinkConfInit( HadoopFlowProcess process, Tap tap, JobConf conf ) {
+    public void sinkConfInit( FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
+        JobConf conf ) {
         if( selectQuery != null )
             throw new TapException( "cannot sink to this Scheme" );
 
@@ -539,7 +540,7 @@ public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader,
     }
 
     @Override
-    public void sourcePrepare( HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall )
+    public void sourcePrepare( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall )
     {
         Object[] pair = new Object[]{sourceCall.getInput().createKey(), sourceCall.getInput().createValue()};
 
@@ -547,7 +548,7 @@ public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader,
     }
 
     @Override
-    public boolean source( HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall ) throws IOException
+    public boolean source( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall ) throws IOException
     {
         Object key = sourceCall.getContext()[ 0 ];
         Object value = sourceCall.getContext()[ 1 ];
@@ -563,12 +564,12 @@ public class JDBCScheme extends Scheme<HadoopFlowProcess, JobConf, RecordReader,
     }
 
     @Override
-    public void sourceCleanup( HadoopFlowProcess flowProcess, SourceCall<Object[], RecordReader> sourceCall ) {
+    public void sourceCleanup( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall ) {
         sourceCall.setContext( null );
     }
 
     @Override
-    public void sink( HadoopFlowProcess flowProcess, SinkCall<Object[], OutputCollector> sinkCall ) throws IOException {
+    public void sink( FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall ) throws IOException {
         // it's ok to use NULL here so the collector does not write anything
         TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
         OutputCollector outputCollector = sinkCall.getOutput();

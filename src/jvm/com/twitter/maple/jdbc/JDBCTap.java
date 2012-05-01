@@ -12,16 +12,14 @@
 
 package com.twitter.maple.jdbc;
 
-import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
-import cascading.tap.hadoop.MultiRecordReaderIterator;
-import cascading.tap.hadoop.RecordReaderIterator;
+import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
-import cascading.tuple.TupleEntrySchemeIterator;
 import com.twitter.maple.jdbc.db.DBConfiguration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -66,7 +64,7 @@ import java.util.Map;
  * @see com.twitter.maple.jdbc.db.DBInputFormat
  * @see com.twitter.maple.jdbc.db.DBOutputFormat
  */
-public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, OutputCollector> {
+public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     /** Field LOG */
     private static final Logger LOG = LoggerFactory.getLogger( JDBCTap.class );
 
@@ -270,44 +268,31 @@ public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, Outpu
         return true;
     }
 
-    private JobConf getSourceConf( HadoopFlowProcess flowProcess, JobConf conf, String property )
+    private JobConf getSourceConf( FlowProcess<JobConf> flowProcess, JobConf conf, String property )
         throws IOException {
         Map<String, String> priorConf = HadoopUtil.deserializeMapBase64( property, true );
         return flowProcess.mergeMapIntoConfig( conf, priorConf );
     }
 
     @Override
-    public TupleEntryIterator openForRead( HadoopFlowProcess flowProcess, RecordReader input )
+    public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader input )
         throws IOException {
+        // this is only called when, on the client side, a user wants to open a tap for writing on a client
+        // MultiRecordReader will create a new RecordReader instance for use across any file parts
+        // or on the cluster side during accumulation for a Join
+        //
+        // if custom jobConf properties need to be passed down, use the FlowProcess<JobConf> copy constructor
+        //
+        if( input == null )
+            return new HadoopTupleEntrySchemeIterator( flowProcess, this );
 
         // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
         // during processing of an InputSplit
-        if( input != null )
-            return new TupleEntrySchemeIterator( flowProcess, getScheme(), new RecordReaderIterator( input ) );
-
-        Map<Object, Object> properties = HadoopUtil.createProperties(flowProcess.getJobConf());
-
-        properties.remove( "mapred.input.dir" );
-
-        JobConf conf = HadoopUtil.createJobConf( properties, null );
-
-        // allows client side config to be used cluster side
-        String property = flowProcess.getJobConf()
-            .getRaw( "cascading.step.accumulated.source.conf." + getIdentifier() );
-
-        if( property != null ) {
-            conf = getSourceConf( flowProcess, conf, property );
-            flowProcess = new HadoopFlowProcess( flowProcess, conf );
-        }
-
-        LOG.info("Opening JDBCTap for read.");
-
-        return new TupleEntrySchemeIterator( flowProcess, getScheme(),
-            new MultiRecordReaderIterator(flowProcess, this ) );
+        return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 
     @Override
-    public TupleEntryCollector openForWrite( HadoopFlowProcess flowProcess, OutputCollector output ) throws IOException {
+    public TupleEntryCollector openForWrite( FlowProcess<JobConf> flowProcess, OutputCollector output ) throws IOException {
         if( !isSink() )
             throw new TapException( "this tap may not be used as a sink, no TableDesc defined" );
 
@@ -326,7 +311,7 @@ public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, Outpu
     }
 
     @Override
-    public void sourceConfInit( HadoopFlowProcess process, JobConf conf )
+    public void sourceConfInit( FlowProcess<JobConf> process, JobConf conf )
     {
         // a hack for MultiInputFormat to see that there is a child format
         FileInputFormat.setInputPaths( conf, getPath() );
@@ -340,7 +325,7 @@ public class JDBCTap extends Tap<HadoopFlowProcess, JobConf, RecordReader, Outpu
     }
 
     @Override
-    public void sinkConfInit( HadoopFlowProcess process, JobConf conf )
+    public void sinkConfInit( FlowProcess<JobConf> process, JobConf conf )
     {
         if( !isSink() )
             return;

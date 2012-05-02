@@ -18,6 +18,7 @@
 
 package com.twitter.maple.jdbc;
 
+import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
@@ -42,25 +43,25 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
     /** Field writer */
     private RecordWriter writer;
     /** Field flowProcess */
-    private final HadoopFlowProcess hadoopFlowProcess;
+    private final FlowProcess<JobConf> hadoopFlowProcess;
     /** Field tap */
-    private final Tap<HadoopFlowProcess, JobConf, RecordReader, OutputCollector> tap;
+    private final Tap<JobConf, RecordReader, OutputCollector> tap;
     /** Field reporter */
     private final Reporter reporter = Reporter.NULL;
 
     /**
      * Constructor TapCollector creates a new TapCollector instance.
      *
-     * @param hadoopFlowProcess
+     * @param flowProcess
      * @param tap               of type Tap
      * @throws IOException when fails to initialize
      */
-    public JDBCTapCollector( HadoopFlowProcess hadoopFlowProcess, Tap<HadoopFlowProcess, JobConf, RecordReader, OutputCollector> tap ) throws IOException {
-        super( hadoopFlowProcess, tap.getScheme() );
-        this.hadoopFlowProcess = hadoopFlowProcess;
+    public JDBCTapCollector( FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap ) throws IOException {
+        super( flowProcess, tap.getScheme() );
+        this.hadoopFlowProcess = flowProcess;
 
         this.tap = tap;
-        this.conf = new JobConf( hadoopFlowProcess.getJobConf() );
+        this.conf = new JobConf( flowProcess.getConfigCopy() );
 
         this.setOutput( this );
     }
@@ -109,7 +110,9 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
      * @throws IOException when
      */
     public void collect( Object writableComparable, Object writable ) throws IOException {
-        hadoopFlowProcess.getReporter().progress();
+        if (hadoopFlowProcess instanceof HadoopFlowProcess)
+            ((HadoopFlowProcess) hadoopFlowProcess).getReporter().progress();
+
         writer.write( writableComparable, writable );
     }
 }

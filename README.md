@@ -4,7 +4,7 @@ A collection of useful Cascading taps.
 
 ## Usage
 
-FIXME: write
+Maple is hosted on [Conjars](http://conjars.org/com.twitter/maple).
 
 ## License
 

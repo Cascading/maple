@@ -31,10 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class JDBCTap is a {@link Tap} sub-class that provides read and write access to a RDBMS via JDBC drivers.
@@ -66,7 +63,9 @@ import java.util.Map;
  */
 public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     /** Field LOG */
-    private static final Logger LOG = LoggerFactory.getLogger( JDBCTap.class );
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCTap.class);
+
+    private final String id = UUID.randomUUID().toString();
 
     /** Field connectionUrl */
     String connectionUrl;
@@ -256,11 +255,16 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
      * @return the path (type Path) of this JDBCTap object.
      */
     public Path getPath() {
-        return new Path( getIdentifier() );
+        return new Path( getJDBCPath() );
     }
 
     @Override
     public String getIdentifier() {
+        return getJDBCPath() + this.id;
+    }
+
+
+    public String getJDBCPath() {
         return "jdbc:/" + connectionUrl.replaceAll( ":", "_" );
     }
 

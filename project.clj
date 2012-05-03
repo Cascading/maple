@@ -1,4 +1,4 @@
-(defproject com.twitter/maple "0.1.6"
+(defproject com.twitter/maple "0.1.7"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :description "All the Cascading taps we have to offer."

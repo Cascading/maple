@@ -16,8 +16,19 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapred.TableInputFormat;
+import org.apache.hadoop.hbase.mapred.TableOutputFormat;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
@@ -26,20 +37,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
-
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.RecordReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The HBaseScheme class is a {@link Scheme} subclass. It is used in conjunction with the {@HBaseTap} to
@@ -156,38 +153,44 @@ public class HBaseScheme
   }
 
   @Override
-  public void sourcePrepare( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall )
-  {
-      Object[] pair = new Object[]{sourceCall.getInput().createKey(), sourceCall.getInput().createValue()};
+  public void sourcePrepare(FlowProcess<JobConf> flowProcess,
+      SourceCall<Object[], RecordReader> sourceCall) {
+    Object[] pair =
+        new Object[]{sourceCall.getInput().createKey(), sourceCall.getInput().createValue()};
 
-      sourceCall.setContext( pair );
+    sourceCall.setContext(pair);
   }
 
   @Override
-  public void sourceCleanup( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall ) {
-      sourceCall.setContext( null );
+  public void sourceCleanup(FlowProcess<JobConf> flowProcess,
+      SourceCall<Object[], RecordReader> sourceCall) {
+    sourceCall.setContext(null);
   }
 
   @Override
-  public boolean source(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
+  public boolean source(FlowProcess<JobConf> flowProcess,
+      SourceCall<Object[], RecordReader> sourceCall) throws IOException {
     Tuple result = new Tuple();
 
-    Object key = sourceCall.getContext()[ 0 ];
-    Object value = sourceCall.getContext()[ 1 ];
-    boolean hasNext = sourceCall.getInput().next( key, value );
-    if( !hasNext )
-      return false;
+    Object key = sourceCall.getContext()[0];
+    Object value = sourceCall.getContext()[1];
+    boolean hasNext = sourceCall.getInput().next(key, value);
+    if (!hasNext) { return false; }
 
     ImmutableBytesWritable keyWritable = (ImmutableBytesWritable) key;
     Result row = (Result) value;
 
-    result.add(Bytes.toString(keyWritable.get()));
-    for (int i = 0; i < familyNames.length; i++) {
-      String familyName = familyNames[i];
+    result.add(keyWritable.get());
 
-      for (Object fieldName : valueFields[i]) {
-        byte[] bytes = row.getValue(Bytes.toBytes(familyName), Bytes.toBytes((String) fieldName));
-        result.add(bytes != null ? Bytes.toString(bytes) : null);
+    for (int i = 0; i < this.familyNames.length; i++) {
+      String familyName = this.familyNames[i];
+      byte[] familyNameBytes = Bytes.toBytes(familyName);
+      Fields fields = this.valueFields[i];
+      for (int k = 0; k < fields.size(); k++) {
+        String fieldName = (String) fields.get(k);
+        byte[] fieldNameBytes = Bytes.toBytes(fieldName);
+        byte[] cellValue = row.getValue(familyNameBytes, fieldNameBytes);
+        result.add(cellValue);
       }
     }
 
@@ -197,7 +200,8 @@ public class HBaseScheme
   }
 
   @Override
-  public void sink( FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall ) throws IOException {
+  public void sink(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall)
+      throws IOException {
     TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
     OutputCollector outputCollector = sinkCall.getOutput();
     Tuple key = tupleEntry.selectTuple(keyField);
@@ -225,35 +229,22 @@ public class HBaseScheme
   }
 
   @Override
-  public void sinkConfInit(FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
-        JobConf conf ) {
-    conf.set("mapred.output.format.class", TableOutputFormat.class.getName());
-    conf.setOutputValueClass(Writable.class);
+  public void sinkConfInit(FlowProcess<JobConf> process,
+      Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
+    conf.setOutputFormat(TableOutputFormat.class);
+
+    conf.setOutputKeyClass(ImmutableBytesWritable.class);
+    conf.setOutputValueClass(Put.class);
   }
 
   @Override
-  public void sourceConfInit(FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
-        JobConf conf ) {
-    conf.set("mapred.input.format.class", TableInputFormat.class.getName());
+  public void sourceConfInit(FlowProcess<JobConf> process,
+      Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
+    conf.setInputFormat(TableInputFormat.class);
 
     String columns = getColumns();
     LOG.debug("sourcing from columns: {}", columns);
-
-    Scan scan = new Scan();
-
-    for (int i = 0; i < familyNames.length; i++) {
-      String familyName = familyNames[i];
-
-      for (Object fieldName : valueFields[i]) {
-        scan.addColumn(Bytes.toBytes(familyName), Bytes.toBytes((String) fieldName));
-      }
-    }
-
-    try {
-      conf.set(TableInputFormat.SCAN, HadoopUtil.serializeBase64(scan));
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to serialize B64 string: " + e);
-    }
+    conf.set(TableInputFormat.COLUMN_LIST, columns);
   }
 
   private String getColumns() {

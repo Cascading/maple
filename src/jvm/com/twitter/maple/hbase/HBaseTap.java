@@ -15,27 +15,28 @@ package com.twitter.maple.hbase;
 import java.io.IOException;
 import java.util.UUID;
 
-import cascading.flow.FlowProcess;
-import cascading.tap.SinkMode;
-import cascading.tap.Tap;
-import cascading.tuple.TupleEntryCollector;
-import cascading.tuple.TupleEntryIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import cascading.flow.FlowProcess;
+import cascading.tap.SinkMode;
+import cascading.tap.Tap;
+import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
+import cascading.tuple.TupleEntryCollector;
+import cascading.tuple.TupleEntryIterator;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with the {@HBaseFullScheme}
@@ -122,11 +123,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   private HBaseAdmin getHBaseAdmin(JobConf conf)
       throws MasterNotRunningException, ZooKeeperConnectionException {
     if (hBaseAdmin == null) {
-      conf = conf == null ? new JobConf() : new JobConf(conf);
-
-      conf.set("hbase.zookeeper.quorum", quorumNames);
-
-      hBaseAdmin = new HBaseAdmin(new HBaseConfiguration(conf));
+      hBaseAdmin = new HBaseAdmin(HBaseConfiguration.create());
     }
 
     return hBaseAdmin;
@@ -138,7 +135,13 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     LOG.debug("sinking to table: {}", tableName);
 
-    // TODO: delete resource in replace mode
+    if (isReplace() && conf.get("mapred.task.partition") == null) {
+      try {
+        deleteResource(conf);
+      } catch (IOException e) {
+        throw new RuntimeException("could not delete resource: " + e);
+      }
+    }
 
     conf.set(TableOutputFormat.OUTPUT_TABLE, tableName);
     super.sinkConfInit(process, conf);
@@ -150,7 +153,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override public TupleEntryIterator openForRead(FlowProcess<JobConf> jobConfFlowProcess,
       RecordReader recordReader) throws IOException {
-    throw new NotImplementedException();
+    return new HadoopTupleEntrySchemeIterator(jobConfFlowProcess, this, recordReader);
   }
 
   @Override public TupleEntryCollector openForWrite(FlowProcess<JobConf> jobConfFlowProcess,
@@ -202,8 +205,6 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public void sourceConfInit(FlowProcess<JobConf> process, JobConf conf) {
-    conf.set("hbase.zookeeper.quorum", quorumNames);
-
     LOG.debug("sourcing from table: {}", tableName);
 
     FileInputFormat.addInputPaths(conf, tableName);

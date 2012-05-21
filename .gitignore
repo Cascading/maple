@@ -1,3 +1,6 @@
+*.iml
+*.ipr
+*.iws
 /pom.xml
 *jar
 /lib

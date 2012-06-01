@@ -9,6 +9,6 @@
                      [asm "3.2"]
                      [org.apache.hbase/hbase "0.90.2"
                       :exclusions [org.apache.hadoop/hadoop-core asm]]
-                     [cascading/cascading-hadoop "2.0.0-wip-288"
+                     [cascading/cascading-hadoop "2.0.0-wip-310"
                       :exclusions [org.codehaus.janino/janino
                                    org.apache.hadoop/hadoop-core]]])

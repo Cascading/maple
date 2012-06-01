@@ -6,7 +6,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.SourceTap;
 import cascading.tap.Tap;
-import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryIterator;
@@ -133,17 +133,7 @@ public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrappe
     @Override
     public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader<TupleWrapper,
         NullWritable> input ) throws IOException {
-        // this is only called when, on the client side, a user wants to open a tap for writing on a client
-        // MultiRecordReader will create a new RecordReader instance for use across any file parts
-        // or on the cluster side during accumulation for a Join
-        //
-        // if custom jobConf properties need to be passed down, use the HadoopFlowProcess copy constructor
-        //
-        if( input == null )
-            return new HadoopTupleEntrySchemeIterator( flowProcess, this );
-
-        // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
-        // during processing of an InputSplit
+        // This deals with null inputs too
         return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 

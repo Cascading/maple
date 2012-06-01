@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import cascading.flow.FlowProcess;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
-import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;

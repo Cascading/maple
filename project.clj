@@ -1,4 +1,4 @@
-(defproject com.twitter/maple "0.1.10"
+(defproject com.twitter/maple "0.2.0-SNAPSHOT"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :description "All the Cascading taps we have to offer."
@@ -9,6 +9,6 @@
                      [asm "3.2"]
                      [org.apache.hbase/hbase "0.90.2"
                       :exclusions [org.apache.hadoop/hadoop-core asm]]
-                     [cascading/cascading-hadoop "2.0.0-wip-310"
+                     [cascading/cascading-hadoop "2.0.0"
                       :exclusions [org.codehaus.janino/janino
                                    org.apache.hadoop/hadoop-core]]])

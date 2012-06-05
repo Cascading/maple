@@ -12,15 +12,14 @@
 
 package com.twitter.maple.hbase;
 
-import java.io.IOException;
-import java.util.UUID;
-
+import cascading.flow.FlowProcess;
+import cascading.tap.SinkMode;
+import cascading.tap.Tap;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
+import cascading.tuple.TupleEntryCollector;
+import cascading.tuple.TupleEntryIterator;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -29,14 +28,10 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import cascading.flow.FlowProcess;
-import cascading.tap.SinkMode;
-import cascading.tap.Tap;
-import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
-import cascading.tuple.TupleEntryCollector;
-import cascading.tuple.TupleEntryIterator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import java.io.IOException;
+import java.util.UUID;
 
 /**
  * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with the {@HBaseFullScheme}
@@ -153,12 +148,12 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override public TupleEntryIterator openForRead(FlowProcess<JobConf> jobConfFlowProcess,
       RecordReader recordReader) throws IOException {
-    return new HadoopTupleEntrySchemeIterator(jobConfFlowProcess, this, recordReader);
+      return new HadoopTupleEntrySchemeIterator(jobConfFlowProcess, this, recordReader);
   }
 
   @Override public TupleEntryCollector openForWrite(FlowProcess<JobConf> jobConfFlowProcess,
       OutputCollector outputCollector) throws IOException {
-    throw new NotImplementedException();
+      throw new NotImplementedException();
   }
 
   @Override public boolean createResource(JobConf jobConf) throws IOException {

@@ -6,7 +6,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.SourceTap;
 import cascading.tap.Tap;
-import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryIterator;
@@ -15,8 +15,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -25,11 +23,9 @@ import java.util.UUID;
 
 public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrapper, NullWritable>>
     implements Serializable {
-    private static final Logger logger = LoggerFactory.getLogger(MemorySourceTap.class);
 
     public static class MemorySourceScheme
         extends Scheme<JobConf, RecordReader<TupleWrapper, NullWritable>, Void, Object[], Void> {
-        private static final Logger logger = LoggerFactory.getLogger(MemorySourceScheme.class);
 
         private transient List<Tuple> tuples;
         private final String id;
@@ -133,17 +129,8 @@ public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrappe
     @Override
     public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader<TupleWrapper,
         NullWritable> input ) throws IOException {
-        // this is only called when, on the client side, a user wants to open a tap for writing on a client
-        // MultiRecordReader will create a new RecordReader instance for use across any file parts
-        // or on the cluster side during accumulation for a Join
-        //
-        // if custom jobConf properties need to be passed down, use the HadoopFlowProcess copy constructor
-        //
-        if( input == null )
-            return new HadoopTupleEntrySchemeIterator( flowProcess, this );
-
-        // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
-        // during processing of an InputSplit
+        // input may be null when this method is called on the client side or cluster side when accumulating
+        // for a HashJoin
         return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 

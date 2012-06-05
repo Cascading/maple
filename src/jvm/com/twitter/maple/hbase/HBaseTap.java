@@ -28,7 +28,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;

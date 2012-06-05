@@ -15,8 +15,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -25,11 +23,9 @@ import java.util.UUID;
 
 public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrapper, NullWritable>>
     implements Serializable {
-    private static final Logger logger = LoggerFactory.getLogger(MemorySourceTap.class);
 
     public static class MemorySourceScheme
         extends Scheme<JobConf, RecordReader<TupleWrapper, NullWritable>, Void, Object[], Void> {
-        private static final Logger logger = LoggerFactory.getLogger(MemorySourceScheme.class);
 
         private transient List<Tuple> tuples;
         private final String id;
@@ -133,7 +129,8 @@ public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrappe
     @Override
     public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader<TupleWrapper,
         NullWritable> input ) throws IOException {
-        // This deals with null inputs too
+        // input may be null when this method is called on the client side or cluster side when accumulating
+        // for a HashJoin
         return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 

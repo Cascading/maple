@@ -279,9 +279,9 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     }
 
     @Override
-    public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader input )
-        throws IOException {
-        // This deals with null inputs too
+    public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader input ) throws IOException {
+        // input may be null when this method is called on the client side or cluster side when accumulating
+        // for a HashJoin
         return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 

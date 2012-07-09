@@ -15,9 +15,12 @@ package com.twitter.maple.hbase;
 import cascading.flow.FlowProcess;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeCollector;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -31,15 +34,18 @@ import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 /**
- * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with the {@HBaseFullScheme}
- * to allow for the reading and writing of data to and from a HBase cluster.
+ * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with
+ * the {@HBaseFullScheme} to allow for the reading and writing
+ * of data to and from a HBase cluster.
  */
 public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   /** Field LOG */
   private static final Logger LOG = LoggerFactory.getLogger(HBaseTap.class);
+
   private final String id = UUID.randomUUID().toString();
 
   /** Field SCHEME */
@@ -55,9 +61,11 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   *
-   * @param tableName       of type String
-   * @param HBaseFullScheme of type HBaseFullScheme
+   * 
+   * @param tableName
+   *          of type String
+   * @param HBaseFullScheme
+   *          of type HBaseFullScheme
    */
   public HBaseTap(String tableName, HBaseScheme HBaseFullScheme) {
     super(HBaseFullScheme, SinkMode.UPDATE);
@@ -66,10 +74,13 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   *
-   * @param tableName       of type String
-   * @param HBaseFullScheme of type HBaseFullScheme
-   * @param sinkMode        of type SinkMode
+   * 
+   * @param tableName
+   *          of type String
+   * @param HBaseFullScheme
+   *          of type HBaseFullScheme
+   * @param sinkMode
+   *          of type SinkMode
    */
   public HBaseTap(String tableName, HBaseScheme HBaseFullScheme, SinkMode sinkMode) {
     super(HBaseFullScheme, sinkMode);
@@ -78,9 +89,11 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   *
-   * @param tableName       of type String
-   * @param HBaseFullScheme of type HBaseFullScheme
+   * 
+   * @param tableName
+   *          of type String
+   * @param HBaseFullScheme
+   *          of type HBaseFullScheme
    */
   public HBaseTap(String quorumNames, String tableName, HBaseScheme HBaseFullScheme) {
     super(HBaseFullScheme, SinkMode.UPDATE);
@@ -90,13 +103,15 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   *
-   * @param tableName       of type String
-   * @param HBaseFullScheme of type HBaseFullScheme
-   * @param sinkMode        of type SinkMode
+   * 
+   * @param tableName
+   *          of type String
+   * @param HBaseFullScheme
+   *          of type HBaseFullScheme
+   * @param sinkMode
+   *          of type SinkMode
    */
-  public HBaseTap(String quorumNames, String tableName, HBaseScheme HBaseFullScheme,
-      SinkMode sinkMode) {
+  public HBaseTap(String quorumNames, String tableName, HBaseScheme HBaseFullScheme, SinkMode sinkMode) {
     super(HBaseFullScheme, sinkMode);
     this.quorumNames = quorumNames;
     this.tableName = tableName;
@@ -104,7 +119,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Method getTableName returns the tableName of this HBaseTap object.
-   *
+   * 
    * @return the tableName (type String) of this HBaseTap object.
    */
   public String getTableName() {
@@ -115,10 +130,10 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     return new Path(SCHEME + ":/" + tableName.replaceAll(":", "_"));
   }
 
-  private HBaseAdmin getHBaseAdmin(JobConf conf)
-      throws MasterNotRunningException, ZooKeeperConnectionException {
+  private HBaseAdmin getHBaseAdmin(JobConf conf) throws MasterNotRunningException, ZooKeeperConnectionException {
     if (hBaseAdmin == null) {
-      hBaseAdmin = new HBaseAdmin(HBaseConfiguration.create());
+      Configuration hbaseConf = HBaseConfiguration.create(conf);
+      hBaseAdmin = new HBaseAdmin(hbaseConf);
     }
 
     return hBaseAdmin;
@@ -127,41 +142,56 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   @Override
   public void sinkConfInit(FlowProcess<JobConf> process, JobConf conf) {
     conf.set("hbase.zookeeper.quorum", quorumNames);
-
     LOG.debug("sinking to table: {}", tableName);
 
     if (isReplace() && conf.get("mapred.task.partition") == null) {
       try {
         deleteResource(conf);
+        
       } catch (IOException e) {
         throw new RuntimeException("could not delete resource: " + e);
       }
+    }
+    
+    else if (isUpdate()) {
+      try {
+          createResource(conf);
+      } catch (IOException e) {
+          throw new RuntimeException(tableName + " does not exist !");
+      }
+      
     }
 
     conf.set(TableOutputFormat.OUTPUT_TABLE, tableName);
     super.sinkConfInit(process, conf);
   }
 
-  @Override public String getIdentifier() {
+  @Override
+  public String getIdentifier() {
     return id;
   }
 
-  @Override public TupleEntryIterator openForRead(FlowProcess<JobConf> jobConfFlowProcess,
-      RecordReader recordReader) throws IOException {
-      return new HadoopTupleEntrySchemeIterator(jobConfFlowProcess, this, recordReader);
+  @Override
+  public TupleEntryIterator openForRead(FlowProcess<JobConf> jobConfFlowProcess, RecordReader recordReader) throws IOException {
+    return new HadoopTupleEntrySchemeIterator(jobConfFlowProcess, this, recordReader);
   }
 
-  @Override public TupleEntryCollector openForWrite(FlowProcess<JobConf> jobConfFlowProcess,
-      OutputCollector outputCollector) throws IOException {
-      throw new NotImplementedException();
+  @Override
+  public TupleEntryCollector openForWrite(FlowProcess<JobConf> jobConfFlowProcess, OutputCollector outputCollector) throws IOException {
+    HBaseTapCollector hBaseCollector = new HBaseTapCollector( jobConfFlowProcess, this );
+    hBaseCollector.prepare();
+    return hBaseCollector;
   }
 
-  @Override public boolean createResource(JobConf jobConf) throws IOException {
+  @Override
+  public boolean createResource(JobConf jobConf) throws IOException {
     HBaseAdmin hBaseAdmin = getHBaseAdmin(jobConf);
+    
+    if (hBaseAdmin.tableExists(tableName)) {
+      return true;
+    }
 
-    if (hBaseAdmin.tableExists(tableName)) { return true; }
-
-    LOG.debug("creating hbase table: {}", tableName);
+    LOG.info("creating hbase table: {}", tableName);
 
     HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
 
@@ -176,13 +206,16 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     return true;
   }
 
-  @Override public boolean deleteResource(JobConf jobConf) throws IOException {
+  @Override
+  public boolean deleteResource(JobConf jobConf) throws IOException {
     // eventually keep table meta-data to source table create
     HBaseAdmin hBaseAdmin = getHBaseAdmin(jobConf);
 
-    if (!hBaseAdmin.tableExists(tableName)) { return true; }
-
-    LOG.debug("deleting hbase table: {}", tableName);
+    if (!hBaseAdmin.tableExists(tableName)) {
+      return true;
+    }
+    
+    LOG.info("deleting hbase table: {}", tableName);
 
     hBaseAdmin.disableTable(tableName);
     hBaseAdmin.deleteTable(tableName);
@@ -190,27 +223,36 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     return true;
   }
 
-  @Override public boolean resourceExists(JobConf jobConf) throws IOException {
+  @Override
+  public boolean resourceExists(JobConf jobConf) throws IOException {
     return getHBaseAdmin(jobConf).tableExists(tableName);
   }
 
-  @Override public long getModifiedTime(JobConf jobConf) throws IOException {
-    return System.currentTimeMillis(); // currently unable to find last mod time on a table
+  @Override
+  public long getModifiedTime(JobConf jobConf) throws IOException {
+    return System.currentTimeMillis(); // currently unable to find last mod time
+                                       // on a table
   }
 
   @Override
   public void sourceConfInit(FlowProcess<JobConf> process, JobConf conf) {
+    conf.set("hbase.zookeeper.quorum", quorumNames);
     LOG.debug("sourcing from table: {}", tableName);
-
     FileInputFormat.addInputPaths(conf, tableName);
     super.sourceConfInit(process, conf);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (this == object) { return true; }
-    if (object == null || getClass() != object.getClass()) { return false; }
-    if (!super.equals(object)) { return false; }
+    if (this == object) {
+      return true;
+    }
+    if (object == null || getClass() != object.getClass()) {
+      return false;
+    }
+    if (!super.equals(object)) {
+      return false;
+    }
 
     HBaseTap hBaseTap = (HBaseTap) object;
 

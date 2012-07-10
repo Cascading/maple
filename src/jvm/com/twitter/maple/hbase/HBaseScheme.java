@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,9 +146,10 @@ public class HBaseScheme
         familyNameSet.add(hbaseColumn(pos > 0 ? columnName.substring(0, pos) : columnName));
       }
     } else {
-      for (String familyName : familyNames) { familyNameSet.add(hbaseColumn(familyName)); }
+      for (String familyName : familyNames) {
+        familyNameSet.add(familyName); 
+      }
     }
-
     return familyNameSet.toArray(new String[0]);
   }
 
@@ -204,22 +206,19 @@ public class HBaseScheme
     TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
     OutputCollector outputCollector = sinkCall.getOutput();
     Tuple key = tupleEntry.selectTuple(keyField);
-
     byte[] keyBytes = Bytes.toBytes(key.getString(0));
     Put put = new Put(keyBytes);
 
     for (int i = 0; i < valueFields.length; i++) {
       Fields fieldSelector = valueFields[i];
       TupleEntry values = tupleEntry.selectEntry(fieldSelector);
-
+      
       for (int j = 0; j < values.getFields().size(); j++) {
         Fields fields = values.getFields();
         Tuple tuple = values.getTuple();
 
         String value = tuple.getString(j);
-
         byte[] asBytes = value == null ? null : Bytes.toBytes(value);
-
         put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), asBytes);
       }
     }

@@ -98,7 +98,7 @@ public class TupleMemoryInputFormat implements InputFormat<TupleWrapper, NullWri
 
     public static String encodeBytes(byte[] bytes) {
         try {
-            return new String(Base64.encodeBase64(bytes), "US-ASCII");
+            return new String(Base64.encodeBase64(bytes), ENCODING);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

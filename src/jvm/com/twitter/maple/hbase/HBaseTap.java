@@ -55,13 +55,13 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   private transient HBaseAdmin hBaseAdmin;
 
   /** Field hostName */
-  private String quorumNames = "localhost";
+  private String quorumNames;
   /** Field tableName */
   private String tableName;
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   * 
+   *
    * @param tableName
    *          of type String
    * @param HBaseFullScheme
@@ -74,7 +74,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   * 
+   *
    * @param tableName
    *          of type String
    * @param HBaseFullScheme
@@ -89,7 +89,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   * 
+   *
    * @param tableName
    *          of type String
    * @param HBaseFullScheme
@@ -103,7 +103,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Constructor HBaseTap creates a new HBaseTap instance.
-   * 
+   *
    * @param tableName
    *          of type String
    * @param HBaseFullScheme
@@ -119,7 +119,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   /**
    * Method getTableName returns the tableName of this HBaseTap object.
-   * 
+   *
    * @return the tableName (type String) of this HBaseTap object.
    */
   public String getTableName() {
@@ -141,25 +141,28 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public void sinkConfInit(FlowProcess<JobConf> process, JobConf conf) {
-    conf.set("hbase.zookeeper.quorum", quorumNames);
+    if(quorumNames != null) {
+      conf.set("hbase.zookeeper.quorum", quorumNames);
+    }
+
     LOG.debug("sinking to table: {}", tableName);
 
     if (isReplace() && conf.get("mapred.task.partition") == null) {
       try {
         deleteResource(conf);
-        
+
       } catch (IOException e) {
         throw new RuntimeException("could not delete resource: " + e);
       }
     }
-    
+
     else if (isUpdate()) {
       try {
           createResource(conf);
       } catch (IOException e) {
           throw new RuntimeException(tableName + " does not exist !");
       }
-      
+
     }
 
     conf.set(TableOutputFormat.OUTPUT_TABLE, tableName);
@@ -186,7 +189,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   @Override
   public boolean createResource(JobConf jobConf) throws IOException {
     HBaseAdmin hBaseAdmin = getHBaseAdmin(jobConf);
-    
+
     if (hBaseAdmin.tableExists(tableName)) {
       return true;
     }
@@ -214,7 +217,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     if (!hBaseAdmin.tableExists(tableName)) {
       return true;
     }
-    
+
     LOG.info("deleting hbase table: {}", tableName);
 
     hBaseAdmin.disableTable(tableName);
@@ -236,7 +239,10 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public void sourceConfInit(FlowProcess<JobConf> process, JobConf conf) {
-    conf.set("hbase.zookeeper.quorum", quorumNames);
+    if(quorumNames != null) {
+      conf.set("hbase.zookeeper.quorum", quorumNames);
+    }
+
     LOG.debug("sourcing from table: {}", tableName);
     FileInputFormat.addInputPaths(conf, tableName);
     super.sourceConfInit(process, conf);

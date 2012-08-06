@@ -79,7 +79,9 @@ public class DBInputFormat<T extends DBWritable>
             //statement.setFetchSize(Integer.MIN_VALUE);
             String query = getSelectQuery();
             try {
+                LOG.info(query);
                 results = statement.executeQuery(query);
+                LOG.info("done executing select query");
             } catch (SQLException exception) {
                 LOG.error("unable to execute select query: " + query, exception);
                 throw new IOException("unable to execute select query: " + query, exception);
@@ -120,8 +122,11 @@ public class DBInputFormat<T extends DBWritable>
                 query.append(dbConf.getInputQuery());
 
             try {
-                query.append(" LIMIT ").append(split.getLength());
-                query.append(" OFFSET ").append(split.getStart());
+                // Only add limit and offset if you have multiple chunks
+                if(split.getChunks() > 1) {
+                    query.append(" LIMIT ").append(split.getLength());
+                    query.append(" OFFSET ").append(split.getStart());
+                }
             } catch (IOException ex) {
                 //ignore, will not throw
             }
@@ -200,6 +205,7 @@ public class DBInputFormat<T extends DBWritable>
     protected static class DBInputSplit implements InputSplit {
         private long end = 0;
         private long start = 0;
+        private long chunks = 0;
 
         /** Default Constructor */
         public DBInputSplit() {
@@ -211,9 +217,11 @@ public class DBInputFormat<T extends DBWritable>
          * @param start the index of the first row to select
          * @param end   the index of the last row to select
          */
-        public DBInputSplit(long start, long end) {
+        public DBInputSplit(long start, long end, long chunks) {
             this.start = start;
             this.end = end;
+            this.chunks = chunks;
+            LOG.info("creating DB input split with start: " + start + ", end: " + end + ", chunks: " + chunks);
         }
 
         /** {@inheritDoc} */
@@ -237,16 +245,23 @@ public class DBInputFormat<T extends DBWritable>
             return end - start;
         }
 
+        /** @return The total number of chucks accross all splits */
+        public long getChunks() {
+            return chunks;
+        }
+
         /** {@inheritDoc} */
         public void readFields(DataInput input) throws IOException {
             start = input.readLong();
             end = input.readLong();
+            chunks = input.readLong();
         }
 
         /** {@inheritDoc} */
         public void write(DataOutput output) throws IOException {
             output.writeLong(start);
             output.writeLong(end);
+            output.writeLong(chunks);
         }
     }
 
@@ -343,9 +358,9 @@ public class DBInputFormat<T extends DBWritable>
                 DBInputSplit split;
 
                 if (i + 1 == chunks)
-                    split = new DBInputSplit(i * chunkSize, count);
+                    split = new DBInputSplit(i * chunkSize, count, chunks);
                 else
-                    split = new DBInputSplit(i * chunkSize, i * chunkSize + chunkSize);
+                    split = new DBInputSplit(i * chunkSize, i * chunkSize + chunkSize, chunks);
 
                 splits[i] = split;
             }

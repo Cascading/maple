@@ -4,7 +4,7 @@ A collection of useful Cascading taps.
 
 ## Building
 
-Maple uses [Leiningen](https://github.com/technomancy/leiningen/) to build.
+Maple uses [Leiningen 1.X](https://github.com/technomancy/leiningen/) to build. (Again, not yet compatible with Lein 2.x)
 
 1. lein deps
 2. lein compile

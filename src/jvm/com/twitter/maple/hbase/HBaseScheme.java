@@ -180,8 +180,7 @@ public class HBaseScheme
 
     ImmutableBytesWritable keyWritable = (ImmutableBytesWritable) key;
     Result row = (Result) value;
-
-    result.add(keyWritable.get());
+    result.add(keyWritable);
 
     for (int i = 0; i < this.familyNames.length; i++) {
       String familyName = this.familyNames[i];
@@ -191,7 +190,7 @@ public class HBaseScheme
         String fieldName = (String) fields.get(k);
         byte[] fieldNameBytes = Bytes.toBytes(fieldName);
         byte[] cellValue = row.getValue(familyNameBytes, fieldNameBytes);
-        result.add(cellValue);
+        result.add(new ImmutableBytesWritable(cellValue));
       }
     }
 
@@ -206,8 +205,8 @@ public class HBaseScheme
     TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
     OutputCollector outputCollector = sinkCall.getOutput();
     Tuple key = tupleEntry.selectTuple(keyField);
-    byte[] keyBytes = Bytes.toBytes(key.getString(0));
-    Put put = new Put(keyBytes);
+    ImmutableBytesWritable keyBytes = (ImmutableBytesWritable) key.getObject(0);
+    Put put = new Put(keyBytes.get());
 
     for (int i = 0; i < valueFields.length; i++) {
       Fields fieldSelector = valueFields[i];
@@ -217,9 +216,8 @@ public class HBaseScheme
         Fields fields = values.getFields();
         Tuple tuple = values.getTuple();
 
-        String value = tuple.getString(j);
-        byte[] asBytes = value == null ? null : Bytes.toBytes(value);
-        put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), asBytes);
+        ImmutableBytesWritable valueBytes = (ImmutableBytesWritable) tuple.getObject(j);
+        put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), valueBytes.get());
       }
     }
 

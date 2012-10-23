@@ -130,7 +130,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     return new Path(SCHEME + ":/" + tableName.replaceAll(":", "_"));
   }
 
-  private HBaseAdmin getHBaseAdmin(JobConf conf) throws MasterNotRunningException, ZooKeeperConnectionException {
+  protected HBaseAdmin getHBaseAdmin(JobConf conf) throws MasterNotRunningException, ZooKeeperConnectionException {
     if (hBaseAdmin == null) {
       Configuration hbaseConf = HBaseConfiguration.create(conf);
       hBaseAdmin = new HBaseAdmin(hbaseConf);

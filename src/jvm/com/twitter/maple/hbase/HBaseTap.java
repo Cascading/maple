@@ -12,6 +12,8 @@
 
 package com.twitter.maple.hbase;
 
+import com.twitter.maple.hbase.mapred.TableInputFormat;
+
 import cascading.flow.FlowProcess;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
@@ -25,7 +27,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
@@ -218,10 +219,11 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
       return true;
     }
 
-    LOG.info("deleting hbase table: {}", tableName);
+    // TODO: these lines look dangerous so commenting out
+    // LOG.info("deleting hbase table: {}", tableName);
 
-    hBaseAdmin.disableTable(tableName);
-    hBaseAdmin.deleteTable(tableName);
+    // hBaseAdmin.disableTable(tableName);
+    // hBaseAdmin.deleteTable(tableName);
 
     return true;
   }
@@ -244,7 +246,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     }
 
     LOG.debug("sourcing from table: {}", tableName);
-    FileInputFormat.addInputPaths(conf, tableName);
+    TableInputFormat.setTableName(conf, tableName);
     super.sourceConfInit(process, conf);
   }
 

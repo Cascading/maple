@@ -12,6 +12,8 @@
 
 package com.twitter.maple.hbase;
 
+import com.twitter.maple.hbase.mapred.TableInputFormat;
+
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
@@ -24,7 +26,6 @@ import cascading.util.Util;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapred.TableInputFormat;
 import org.apache.hadoop.hbase.mapred.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobConf;
@@ -147,7 +148,7 @@ public class HBaseScheme
       }
     } else {
       for (String familyName : familyNames) {
-        familyNameSet.add(familyName); 
+        familyNameSet.add(familyName);
       }
     }
     return familyNameSet.toArray(new String[0]);
@@ -212,7 +213,7 @@ public class HBaseScheme
     for (int i = 0; i < valueFields.length; i++) {
       Fields fieldSelector = valueFields[i];
       TupleEntry values = tupleEntry.selectEntry(fieldSelector);
-      
+
       for (int j = 0; j < values.getFields().size(); j++) {
         Fields fields = values.getFields();
         Tuple tuple = values.getTuple();

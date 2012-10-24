@@ -12,6 +12,8 @@
 
 package com.twitter.maple.hbase;
 
+import com.twitter.maple.hbase.mapred.TableInputFormat;
+
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
@@ -24,7 +26,6 @@ import cascading.util.Util;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapred.TableInputFormat;
 import org.apache.hadoop.hbase.mapred.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobConf;
@@ -147,7 +148,7 @@ public class HBaseScheme
       }
     } else {
       for (String familyName : familyNames) {
-        familyNameSet.add(familyName); 
+        familyNameSet.add(familyName);
       }
     }
     return familyNameSet.toArray(new String[0]);
@@ -180,8 +181,7 @@ public class HBaseScheme
 
     ImmutableBytesWritable keyWritable = (ImmutableBytesWritable) key;
     Result row = (Result) value;
-
-    result.add(keyWritable.get());
+    result.add(keyWritable);
 
     for (int i = 0; i < this.familyNames.length; i++) {
       String familyName = this.familyNames[i];
@@ -191,7 +191,7 @@ public class HBaseScheme
         String fieldName = (String) fields.get(k);
         byte[] fieldNameBytes = Bytes.toBytes(fieldName);
         byte[] cellValue = row.getValue(familyNameBytes, fieldNameBytes);
-        result.add(cellValue);
+        result.add(new ImmutableBytesWritable(cellValue));
       }
     }
 
@@ -206,20 +206,19 @@ public class HBaseScheme
     TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
     OutputCollector outputCollector = sinkCall.getOutput();
     Tuple key = tupleEntry.selectTuple(keyField);
-    byte[] keyBytes = Bytes.toBytes(key.getString(0));
-    Put put = new Put(keyBytes);
+    ImmutableBytesWritable keyBytes = (ImmutableBytesWritable) key.getObject(0);
+    Put put = new Put(keyBytes.get());
 
     for (int i = 0; i < valueFields.length; i++) {
       Fields fieldSelector = valueFields[i];
       TupleEntry values = tupleEntry.selectEntry(fieldSelector);
-      
+
       for (int j = 0; j < values.getFields().size(); j++) {
         Fields fields = values.getFields();
         Tuple tuple = values.getTuple();
 
-        String value = tuple.getString(j);
-        byte[] asBytes = value == null ? null : Bytes.toBytes(value);
-        put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), asBytes);
+        ImmutableBytesWritable valueBytes = (ImmutableBytesWritable) tuple.getObject(j);
+        put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), valueBytes.get());
       }
     }
 

@@ -12,6 +12,8 @@
 
 package com.twitter.maple.hbase;
 
+import com.twitter.maple.hbase.mapred.TableInputFormat;
+
 import cascading.flow.FlowProcess;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
@@ -25,7 +27,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
@@ -130,7 +131,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     return new Path(SCHEME + ":/" + tableName.replaceAll(":", "_"));
   }
 
-  private HBaseAdmin getHBaseAdmin(JobConf conf) throws MasterNotRunningException, ZooKeeperConnectionException {
+  protected HBaseAdmin getHBaseAdmin(JobConf conf) throws MasterNotRunningException, ZooKeeperConnectionException {
     if (hBaseAdmin == null) {
       Configuration hbaseConf = HBaseConfiguration.create(conf);
       hBaseAdmin = new HBaseAdmin(hbaseConf);
@@ -160,7 +161,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
       try {
           createResource(conf);
       } catch (IOException e) {
-          throw new RuntimeException(tableName + " does not exist !");
+          throw new RuntimeException(tableName + " does not exist !", e);
       }
 
     }
@@ -211,18 +212,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public boolean deleteResource(JobConf jobConf) throws IOException {
-    // eventually keep table meta-data to source table create
-    HBaseAdmin hBaseAdmin = getHBaseAdmin(jobConf);
-
-    if (!hBaseAdmin.tableExists(tableName)) {
-      return true;
-    }
-
-    LOG.info("deleting hbase table: {}", tableName);
-
-    hBaseAdmin.disableTable(tableName);
-    hBaseAdmin.deleteTable(tableName);
-
+    // TODO: for now we don't do anything just to be safe
     return true;
   }
 
@@ -244,7 +234,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     }
 
     LOG.debug("sourcing from table: {}", tableName);
-    FileInputFormat.addInputPaths(conf, tableName);
+    TableInputFormat.setTableName(conf, tableName);
     super.sourceConfInit(process, conf);
   }
 

@@ -160,7 +160,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
       try {
           createResource(conf);
       } catch (IOException e) {
-          throw new RuntimeException(tableName + " does not exist !");
+          throw new RuntimeException(tableName + " does not exist !", e);
       }
 
     }

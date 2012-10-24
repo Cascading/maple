@@ -90,7 +90,7 @@ public class TableInputFormat extends TableInputFormatBase implements
     // Make sure that table has not been set before
     String oldTableName = getTableName(job);
     if(oldTableName != null) {
-      throw new IOException("table name already set to: '"
+      throw new RuntimeException("table name already set to: '"
         + oldTableName + "'");
     }
     job.set(INPUT_TABLE, tableName);

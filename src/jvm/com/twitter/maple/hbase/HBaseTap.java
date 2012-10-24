@@ -212,19 +212,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public boolean deleteResource(JobConf jobConf) throws IOException {
-    // eventually keep table meta-data to source table create
-    HBaseAdmin hBaseAdmin = getHBaseAdmin(jobConf);
-
-    if (!hBaseAdmin.tableExists(tableName)) {
-      return true;
-    }
-
-    // TODO: these lines look dangerous so commenting out
-    // LOG.info("deleting hbase table: {}", tableName);
-
-    // hBaseAdmin.disableTable(tableName);
-    // hBaseAdmin.deleteTable(tableName);
-
+    // TODO: for now we don't do anything just to be safe
     return true;
   }
 

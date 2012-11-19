@@ -17,7 +17,7 @@ import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
-import cascading.tap.hadoop.HadoopTupleEntrySchemeIterator;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import com.twitter.maple.jdbc.db.DBConfiguration;
@@ -31,10 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class JDBCTap is a {@link Tap} sub-class that provides read and write access to a RDBMS via JDBC drivers.
@@ -66,7 +63,9 @@ import java.util.Map;
  */
 public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     /** Field LOG */
-    private static final Logger LOG = LoggerFactory.getLogger( JDBCTap.class );
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCTap.class);
+
+    private final String id = UUID.randomUUID().toString();
 
     /** Field connectionUrl */
     String connectionUrl;
@@ -256,11 +255,16 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
      * @return the path (type Path) of this JDBCTap object.
      */
     public Path getPath() {
-        return new Path( getIdentifier() );
+        return new Path( getJDBCPath() );
     }
 
     @Override
     public String getIdentifier() {
+        return getJDBCPath() + this.id;
+    }
+
+
+    public String getJDBCPath() {
         return "jdbc:/" + connectionUrl.replaceAll( ":", "_" );
     }
 
@@ -275,19 +279,9 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     }
 
     @Override
-    public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader input )
-        throws IOException {
-        // this is only called when, on the client side, a user wants to open a tap for writing on a client
-        // MultiRecordReader will create a new RecordReader instance for use across any file parts
-        // or on the cluster side during accumulation for a Join
-        //
-        // if custom jobConf properties need to be passed down, use the FlowProcess<JobConf> copy constructor
-        //
-        if( input == null )
-            return new HadoopTupleEntrySchemeIterator( flowProcess, this );
-
-        // this is only called cluster task side when Hadoop is providing a RecordReader instance it owns
-        // during processing of an InputSplit
+    public TupleEntryIterator openForRead( FlowProcess<JobConf> flowProcess, RecordReader input ) throws IOException {
+        // input may be null when this method is called on the client side or cluster side when accumulating
+        // for a HashJoin
         return new HadoopTupleEntrySchemeIterator( flowProcess, this, input );
     }
 

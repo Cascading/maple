@@ -98,7 +98,7 @@ public class TupleMemoryInputFormat implements InputFormat<TupleWrapper, NullWri
 
     public static String encodeBytes(byte[] bytes) {
         try {
-            return new String(Base64.encodeBase64(bytes), "US-ASCII");
+            return new String(Base64.encodeBase64(bytes), ENCODING);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -143,7 +143,14 @@ public class TupleMemoryInputFormat implements InputFormat<TupleWrapper, NullWri
         
         String[] pieces = s.split(":");
         int size = Integer.valueOf(pieces[0]);
-        byte[] val = decodeBytes(pieces[1]);
+        
+        byte[] val;
+        
+        if (pieces.length > 1){
+            val = decodeBytes(pieces[1]);
+        }else{
+            val = new byte[0];
+        }
 
         SerializationFactory factory = new SerializationFactory(conf);
         Deserializer<Tuple> deserializer = factory.getDeserializer(Tuple.class);

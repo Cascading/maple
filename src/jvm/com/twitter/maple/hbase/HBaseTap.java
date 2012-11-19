@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
@@ -229,6 +230,9 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public void sourceConfInit(FlowProcess<JobConf> process, JobConf conf) {
+    // a hack for MultiInputFormat to see that there is a child format
+    FileInputFormat.setInputPaths( conf, getPath() );
+
     if(quorumNames != null) {
       conf.set("hbase.zookeeper.quorum", quorumNames);
     }

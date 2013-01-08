@@ -191,6 +191,9 @@ public class HBaseScheme
         String fieldName = (String) fields.get(k);
         byte[] fieldNameBytes = Bytes.toBytes(fieldName);
         byte[] cellValue = row.getValue(familyNameBytes, fieldNameBytes);
+        if (cellValue == null) {
+            cellValue = new byte[0];
+        }
         result.add(new ImmutableBytesWritable(cellValue));
       }
     }

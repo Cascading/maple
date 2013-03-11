@@ -7,7 +7,7 @@
                      [org.clojure/clojure "1.2.1"]
                      [org.apache.hadoop/hadoop-core "0.20.2-dev"]
                      [asm "3.2"]
-                     [org.apache.hbase/hbase "0.90.2"
+                     [org.apache.hbase/hbase "0.94.5"
                       :exclusions [org.apache.hadoop/hadoop-core asm]]
                      [cascading/cascading-hadoop "2.0.0"
                       :exclusions [org.codehaus.janino/janino

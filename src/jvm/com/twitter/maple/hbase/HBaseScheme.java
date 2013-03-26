@@ -179,6 +179,9 @@ public class HBaseScheme
     boolean hasNext = sourceCall.getInput().next(key, value);
     if (!hasNext) { return false; }
 
+    // Skip nulls
+    if (key == null || value == null) { return true; }
+
     ImmutableBytesWritable keyWritable = (ImmutableBytesWritable) key;
     Result row = (Result) value;
     result.add(keyWritable);

@@ -228,7 +228,7 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
             if (i != fieldNames.length - 1) { query.append(","); }
         }
 
-        query.append(");");
+        query.append(")");
 
         return query.toString();
     }
@@ -272,8 +272,6 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
                 if (i != updateNames.length - 1) { query.append(" and "); }
             }
         }
-
-        query.append(";");
 
         return query.toString();
     }

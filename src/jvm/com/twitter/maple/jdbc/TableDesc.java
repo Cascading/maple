@@ -28,13 +28,13 @@ import java.util.List;
  */
 public class TableDesc implements Serializable {
     /** Field tableName */
-    String tableName;
+    protected final String tableName;
     /** Field columnNames */
-    String[] columnNames;
+    protected String[] columnNames;
     /** Field columnDefs */
-    String[] columnDefs;
+    protected String[] columnDefs;
     /** Field primaryKeys */
-    String[] primaryKeys;
+    protected String[] primaryKeys;
 
     /**
      * Constructor TableDesc creates a new TableDesc instance.

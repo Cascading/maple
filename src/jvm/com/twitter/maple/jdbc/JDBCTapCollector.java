@@ -77,6 +77,10 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
         super.prepare();
     }
 
+    public JobConf getJobConf() {
+        return conf;
+    }
+
     private void initialize() throws IOException {
         tap.sinkConfInit( hadoopFlowProcess, conf );
 

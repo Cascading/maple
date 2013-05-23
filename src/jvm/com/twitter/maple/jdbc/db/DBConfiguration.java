@@ -80,6 +80,9 @@ public class DBConfiguration {
     /** Class name implementing DBWritable which will hold input tuples */
     public static final String INPUT_CLASS_PROPERTY = "mapred.jdbc.input.class";
 
+    /** ORDER BY clause in the input SELECT statement */
+    public static final String INPUT_TABLE_ALIAS = "mapred.jdbc.input.table.alias";
+
     /** Output table name */
     public static final String OUTPUT_TABLE_NAME_PROPERTY = "mapred.jdbc.output.table.name";
 
@@ -192,6 +195,14 @@ public class DBConfiguration {
         if (orderby != null && orderby.length() > 0) {
             job.set(DBConfiguration.INPUT_ORDER_BY_PROPERTY, orderby);
         }
+    }
+
+    Boolean getTableAlias() {
+        return job.get(DBConfiguration.INPUT_TABLE_ALIAS);
+    }
+
+    void setTableAlias(Boolean alias) {
+        job.set(DBConfiguration.INPUT_TABLE_ALIAS, alias);
     }
 
     String getInputQuery() {

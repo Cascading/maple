@@ -41,9 +41,14 @@
 			<id>conjars</id>
 			<url>http://conjars.org/repo/</url>
 		</repository>
+		<repository>
+			<id>Cloudera</id>
+			<name>Cloudera</name>
+			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+		</repository>
 	</repositories>
 	<dependencies>
-		<dependency>
+	<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase</artifactId>
 			<version>0.94.5</version>
@@ -57,6 +62,11 @@
 			<groupId>cascading</groupId>
 			<artifactId>cascading-hadoop</artifactId>
 			<version>2.1.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twitter.elephantbird</groupId>
+			<artifactId>elephant-bird-core</artifactId>
+			<version>4.0</version>
 		</dependency>
 	</dependencies>
 </project>

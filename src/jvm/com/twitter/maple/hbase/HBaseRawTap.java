@@ -12,19 +12,16 @@
 
 package com.twitter.maple.hbase;
 
-import com.twitter.maple.hbase.mapred.TableInputFormat;
-
-import cascading.flow.FlowProcess;
-import cascading.tap.SinkMode;
-import cascading.tap.Tap;
-import cascading.tap.hadoop.io.HadoopTupleEntrySchemeCollector;
-import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
-import cascading.tuple.TupleEntryCollector;
-import cascading.tuple.TupleEntryIterator;
+import java.io.IOException;
+import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.*;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -33,18 +30,29 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.UUID;
+import cascading.flow.FlowProcess;
+import cascading.tap.SinkMode;
+import cascading.tap.Tap;
+import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
+import cascading.tuple.TupleEntryCollector;
+import cascading.tuple.TupleEntryIterator;
+
+import com.twitter.maple.hbase.mapred.TableInputFormat;
+//import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 
 /**
  * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with
  * the {@HBaseFullScheme} to allow for the reading and writing
  * of data to and from a HBase cluster.
  */
+@SuppressWarnings({ "deprecation", "rawtypes" })
 public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8019189493428493323L;
+
 	/** Field LOG */
 	private static final Logger LOG = LoggerFactory.getLogger(HBaseRawTap.class);
 
@@ -158,7 +166,7 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 			}
 		}
 
-		else if (isUpdate()) {
+		else if (isUpdate() || isReplace()) {
 			try {
 				createResource(conf);
 			} catch (IOException e) {
@@ -215,7 +223,11 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
 	@Override
 	public boolean deleteResource(JobConf jobConf) throws IOException {
-		// TODO: for now we don't do anything just to be safe
+		if (getHBaseAdmin(jobConf).tableExists(tableName)) {
+			if (getHBaseAdmin(jobConf).isTableEnabled(tableName))
+				getHBaseAdmin(jobConf).disableTable(tableName);
+			getHBaseAdmin(jobConf).deleteTable(tableName);
+		}
 		return true;
 	}
 
@@ -241,7 +253,7 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 		}
 
 		LOG.debug("sourcing from table: {}", tableName);
-		TableInputFormat.setTableName(conf, tableName);
+		conf.set(TableInputFormat.INPUT_TABLE, tableName);
 		super.sourceConfInit(process, conf);
 	}
 

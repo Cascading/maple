@@ -12,8 +12,20 @@
 
 package com.twitter.maple.hbase;
 
-import com.google.protobuf.UnknownFieldSet.Field;
-import com.twitter.maple.hbase.mapred.TableInputFormat;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapred.TableOutputFormat;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -24,21 +36,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapred.TableOutputFormat;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.RecordReader;
-import org.mortbay.log.Log;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
+//import com.twitter.maple.hbase.mapred.TableInputFormat;
 
 /**
  * The HBaseScheme class is a {@link Scheme} subclass. It is used in conjunction
@@ -49,6 +47,11 @@ import java.util.HashSet;
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
 public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6248976486883281356L;
+
 	/** Field LOG */
 	private static final Logger LOG = LoggerFactory.getLogger(HBaseRawScheme.class);
 
@@ -136,6 +139,7 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void sink(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
 		TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
@@ -180,11 +184,6 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 
 		ColumnName() {
 		}
-
-		ColumnName(String family, String name) {
-			this.family = family;
-			this.name = name;
-		}
 	}
 
 	@Override
@@ -197,11 +196,13 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 	@Override
 	public void sourceConfInit(FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
 			JobConf conf) {
-		conf.setInputFormat(TableInputFormat.class);
+		//DeprecatedInputFormatWrapper.setInputFormat(TableInputFormat.class, conf);
+		conf.setInputFormat(com.twitter.maple.hbase.mapred.TableInputFormat.class);
 		if (null != familyNames) {
 			String columns = Util.join(this.familyNames, " ");
 			LOG.debug("sourcing from colum families: {}", columns);
-			conf.set(TableInputFormat.COLUMN_LIST, columns);
+			//conf.set(TableInputFormat.SCAN_COLUMNS, columns);
+			conf.set(com.twitter.maple.hbase.mapred.TableInputFormat.COLUMN_LIST, columns);
 		}
 	}
 

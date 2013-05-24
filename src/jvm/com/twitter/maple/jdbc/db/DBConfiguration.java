@@ -80,7 +80,7 @@ public class DBConfiguration {
     /** Class name implementing DBWritable which will hold input tuples */
     public static final String INPUT_CLASS_PROPERTY = "mapred.jdbc.input.class";
 
-    /** ORDER BY clause in the input SELECT statement */
+    /** Boolean to include table name alias in the input SELECT statement */
     public static final String INPUT_TABLE_ALIAS = "mapred.jdbc.input.table.alias";
 
     /** Output table name */

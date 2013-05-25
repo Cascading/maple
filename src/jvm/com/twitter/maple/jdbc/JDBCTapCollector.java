@@ -97,7 +97,7 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
     public void close() {
         try {
             LOG.info( "closing tap collector for: {}", tap );
-            writer.close( reporter );
+            if ( writer != null ) writer.close( reporter );
         } catch( IOException exception ) {
             LOG.warn( "exception closing: {}", exception );
             throw new TapException( "exception closing JDBCTapCollector", exception );

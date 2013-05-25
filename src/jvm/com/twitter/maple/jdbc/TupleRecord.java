@@ -38,8 +38,11 @@ public class TupleRecord implements DBWritable {
     }
 
     public void write( PreparedStatement statement ) throws SQLException {
-        for( int i = 0; i < tuple.size(); i++ )
+        for( int i = 0, sz = tuple.size(); i < sz; i++ )
             statement.setObject( i + 1, tuple.get( i ) );
+        for ( int i = tuple.size(), sz = statement.getParameterMetaData().getParameterCount(); i < sz; ++ i ) {
+            statement.setObject( i + 1, null );
+        }
     }
 
     public void readFields( ResultSet resultSet ) throws SQLException {

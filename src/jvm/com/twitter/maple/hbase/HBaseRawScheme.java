@@ -200,7 +200,7 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 		conf.setInputFormat(com.twitter.maple.hbase.mapred.TableInputFormat.class);
 		if (null != familyNames) {
 			String columns = Util.join(this.familyNames, " ");
-			LOG.debug("sourcing from colum families: {}", columns);
+			LOG.debug("sourcing from column families: {}", columns);
 			//conf.set(TableInputFormat.SCAN_COLUMNS, columns);
 			conf.set(com.twitter.maple.hbase.mapred.TableInputFormat.COLUMN_LIST, columns);
 		}

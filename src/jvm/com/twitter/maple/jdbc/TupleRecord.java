@@ -38,9 +38,10 @@ public class TupleRecord implements DBWritable {
     }
 
     public void write( PreparedStatement statement ) throws SQLException {
-        for( int i = 0, sz = tuple.size(); i < sz; i++ )
+        int statementParameterCount = statement.getParameterMetaData().getParameterCount();
+        for( int i = 0, sz = Math.min( tuple.size(), statementParameterCount ); i < sz; i++ )
             statement.setObject( i + 1, tuple.get( i ) );
-        for ( int i = tuple.size(), sz = statement.getParameterMetaData().getParameterCount(); i < sz; ++ i ) {
+        for ( int i = tuple.size(), sz = statementParameterCount; i < sz; ++ i ) {
             statement.setObject( i + 1, null );
         }
     }

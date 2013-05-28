@@ -45,13 +45,13 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
     private static Logger LOG = Logger.getLogger(LocalJDBCTap.class.getName());
 
     private JobConf defaults;
-    private JDBCTap lfs;
+    private JDBCTap tap;
     private final String path;
 
     public LocalJDBCTap(Scheme scheme,
             SinkMode sinkMode, JDBCTap tap, String path) {
         super(new LocalScheme<SourceCtx, SinkCtx>(scheme), sinkMode);
-        this.lfs = tap;
+        this.tap = tap;
         this.path = path;
         setup();
     }
@@ -70,7 +70,7 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
 
         ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setDefaults(defaults);
 
-        ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setTap(lfs);
+        ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setTap(tap);
     }
 
     @Override
@@ -81,34 +81,34 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, RecordReader input) throws IOException {
         JobConf jobConf = mergeDefaults("LocalJDBCTap#openForRead", flowProcess.getConfigCopy(), defaults);
-        return lfs.openForRead(new HadoopFlowProcess(jobConf));
+        return tap.openForRead(new HadoopFlowProcess(jobConf));
     }
 
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<Properties> flowProcess, OutputCollector output)
             throws IOException {
         JobConf jobConf = mergeDefaults("LocalJDBCTap#openForWrite", flowProcess.getConfigCopy(), defaults);
-        return lfs.openForWrite(new HadoopFlowProcess(jobConf));
+        return tap.openForWrite(new HadoopFlowProcess(jobConf));
     }
 
     @Override
     public boolean createResource(Properties conf) throws IOException {
-        return lfs.createResource(mergeDefaults("LocalJDBCTap#createResource", conf, defaults));
+        return tap.createResource(mergeDefaults("LocalJDBCTap#createResource", conf, defaults));
     }
 
     @Override
     public boolean deleteResource(Properties conf) throws IOException {
-        return lfs.deleteResource(mergeDefaults("LocalJDBCTap#deleteResource", conf, defaults));
+        return tap.deleteResource(mergeDefaults("LocalJDBCTap#deleteResource", conf, defaults));
     }
 
     @Override
     public boolean resourceExists(Properties conf) throws IOException {
-        return lfs.resourceExists(mergeDefaults("LocalJDBCTap#resourceExists", conf, defaults));
+        return tap.resourceExists(mergeDefaults("LocalJDBCTap#resourceExists", conf, defaults));
     }
 
     @Override
     public long getModifiedTime(Properties conf) throws IOException {
-        return lfs.getModifiedTime(mergeDefaults("LocalJDBCTap#getModifiedTime", conf, defaults));
+        return tap.getModifiedTime(mergeDefaults("LocalJDBCTap#getModifiedTime", conf, defaults));
     }
 
     private static JobConf mergeDefaults(String methodName, Properties properties, JobConf defaults) {
@@ -132,7 +132,7 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
 
         private Scheme<JobConf, RecordReader, OutputCollector, SourceContext, SinkContext> scheme;
         private JobConf defaults;
-        private Tap lfs;
+        private Tap tap;
 
         public LocalScheme(Scheme<JobConf, RecordReader, OutputCollector, SourceContext, SinkContext> scheme) {
             super(scheme.getSourceFields(), scheme.getSinkFields());
@@ -143,15 +143,15 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
             this.defaults = defaults;
         }
 
-        private void setTap(Tap lfs) {
-            this.lfs = lfs;
+        private void setTap(Tap tap) {
+            this.tap = tap;
         }
 
         @Override
         public void sourceConfInit(FlowProcess<Properties> flowProcess,
                 Tap<Properties, RecordReader, OutputCollector> tap, Properties conf) {
             JobConf jobConf = mergeDefaults("LocalScheme#sourceConfInit", conf, defaults);
-            scheme.sourceConfInit(new HadoopFlowProcess(jobConf), lfs, jobConf);
+            scheme.sourceConfInit(new HadoopFlowProcess(jobConf), this.tap, jobConf);
             overwriteProperties(conf, jobConf);
         }
 
@@ -159,7 +159,7 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
         public void sinkConfInit(FlowProcess<Properties> flowProcess,
                 Tap<Properties, RecordReader, OutputCollector> tap, Properties conf) {
             JobConf jobConf = mergeDefaults("LocalScheme#sinkConfInit", conf, defaults);
-            scheme.sinkConfInit(new HadoopFlowProcess(jobConf), lfs, jobConf);
+            scheme.sinkConfInit(new HadoopFlowProcess(jobConf), this.tap, jobConf);
             overwriteProperties(conf, jobConf);
         }
 

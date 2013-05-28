@@ -198,11 +198,11 @@ public class DBConfiguration {
     }
 
     Boolean getTableAlias() {
-        return job.get(DBConfiguration.INPUT_TABLE_ALIAS);
+        return job.getBoolean(DBConfiguration.INPUT_TABLE_ALIAS, true);
     }
 
     void setTableAlias(Boolean alias) {
-        job.set(DBConfiguration.INPUT_TABLE_ALIAS, alias);
+        job.setBoolean(DBConfiguration.INPUT_TABLE_ALIAS, alias);
     }
 
     String getInputQuery() {

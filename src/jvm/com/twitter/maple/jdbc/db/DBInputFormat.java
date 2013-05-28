@@ -408,7 +408,7 @@ public class DBInputFormat<T extends DBWritable>
      */
     public static void setInput(JobConf job, Class<? extends DBWritable> inputClass,
         String tableName, String conditions, String orderBy, long limit, int concurrentReads,
-        String... fieldNames, Boolean tableAlias) {
+        Boolean tableAlias, String... fieldNames) {
         job.setInputFormat(DBInputFormat.class);
 
         DBConfiguration dbConf = new DBConfiguration(job);

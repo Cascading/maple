@@ -62,10 +62,6 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
          */
         defaults = new JobConf();
 
-        // HACK: c.t.h.TextLine checks this property for .zip files; the check
-        // assumes the list is non-empty, which we mock up, here
-        defaults.set("mapred.input.dir", path);
-
         ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setDefaults(defaults);
 
         ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setTap(tap);

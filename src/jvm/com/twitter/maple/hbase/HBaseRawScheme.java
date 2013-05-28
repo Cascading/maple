@@ -36,6 +36,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
+
 //import com.twitter.maple.hbase.mapred.TableInputFormat;
 
 /**
@@ -57,10 +58,11 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 
 	public final Fields RowKeyField = new Fields("rowkey");
 	public final Fields RowField = new Fields("row");
-	
+
 	/** String familyNames */
 	private String[] familyNames;
 
+	private boolean writeNulls = true;
 	/**
 	 * Constructor HBaseScheme creates a new HBaseScheme instance.
 	 * 
@@ -77,6 +79,16 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 
 	public HBaseRawScheme(String[] familyNames) {
 		this.familyNames = familyNames;
+		setSourceFields();
+	}
+
+	public HBaseRawScheme(String familyName, boolean writeNulls) {
+		this(new String[] { familyName }, writeNulls);
+	}
+
+	public HBaseRawScheme(String[] familyNames, boolean writeNulls) {
+		this.familyNames = familyNames;
+		this.writeNulls = writeNulls;
 		setSourceFields();
 	}
 
@@ -145,13 +157,15 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 		TupleEntry tupleEntry = sinkCall.getOutgoingEntry();
 		OutputCollector outputCollector = sinkCall.getOutput();
 		Tuple key = tupleEntry.selectTuple(RowKeyField);
-		ImmutableBytesWritable keyBytes = (ImmutableBytesWritable) key.getObject(0);
+		Object okey = key.getObject(0);
+		ImmutableBytesWritable keyBytes = getBytes(okey);
 		Put put = new Put(keyBytes.get());
 		Fields outFields = tupleEntry.getFields().subtract(RowKeyField);
 		if (null != outFields) {
 			TupleEntry values = tupleEntry.selectEntry(outFields);
 			for (int n = 0; n < values.getFields().size(); n++) {
-				ImmutableBytesWritable valueBytes = (ImmutableBytesWritable) values.get(n);
+				Object o = values.get(n);
+				ImmutableBytesWritable valueBytes = getBytes(o);
 				Comparable field = outFields.get(n);
 				ColumnName cn = parseColumn((String) field);
 				if (null == cn.family) {
@@ -160,12 +174,33 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 					else
 						cn.family = familyNames[n];
 				}
-				put.add(Bytes.toBytes(cn.family), Bytes.toBytes(cn.name), valueBytes.get());
+				if (null != o || writeNulls)
+					put.add(Bytes.toBytes(cn.family), Bytes.toBytes(cn.name), valueBytes.get());
 			}
 		}
 		outputCollector.collect(null, put);
 	}
 
+	private ImmutableBytesWritable getBytes(Object obj) {
+		if (null == obj) return new ImmutableBytesWritable(new byte[0]);
+		if (obj instanceof ImmutableBytesWritable)
+			return (ImmutableBytesWritable) obj;
+		else if (obj instanceof String)
+			return new ImmutableBytesWritable(Bytes.toBytes((String) obj));
+		else if (obj instanceof Long)
+			return new ImmutableBytesWritable(Bytes.toBytes((Long) obj));
+		else if (obj instanceof Integer)
+			return new ImmutableBytesWritable(Bytes.toBytes((Integer) obj));
+		else if (obj instanceof Short)
+			return new ImmutableBytesWritable(Bytes.toBytes((Short) obj));
+		else if (obj instanceof Boolean)
+			return new ImmutableBytesWritable(Bytes.toBytes((Boolean) obj));
+		else if (obj instanceof Double)
+			return new ImmutableBytesWritable(Bytes.toBytes((Double) obj));
+		else
+			throw new IllegalArgumentException("cannot convert object to ImmutableBytesWritable, class=" + obj.getClass().getName());
+	}
+	
 	private ColumnName parseColumn(String column) {
 		ColumnName ret = new ColumnName();
 		int pos = column.indexOf(":");
@@ -196,12 +231,13 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 	@Override
 	public void sourceConfInit(FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
 			JobConf conf) {
-		//DeprecatedInputFormatWrapper.setInputFormat(TableInputFormat.class, conf);
+		// DeprecatedInputFormatWrapper.setInputFormat(TableInputFormat.class,
+		// conf);
 		conf.setInputFormat(com.twitter.maple.hbase.mapred.TableInputFormat.class);
 		if (null != familyNames) {
 			String columns = Util.join(this.familyNames, " ");
 			LOG.debug("sourcing from column families: {}", columns);
-			//conf.set(TableInputFormat.SCAN_COLUMNS, columns);
+			// conf.set(TableInputFormat.SCAN_COLUMNS, columns);
 			conf.set(com.twitter.maple.hbase.mapred.TableInputFormat.COLUMN_LIST, columns);
 		}
 	}

@@ -64,7 +64,10 @@ public class LocalMemorySourceTap<SourceCtx, SinkCtx> extends Tap<Properties, Re
 
         // HACK: c.t.h.TextLine checks this property for .zip files; the check
         // assumes the list is non-empty, which we mock up, here
-        defaults.set("mapred.input.dir", path);
+        defaults.setStrings( "io.serializations", new String[] {
+            "org.apache.hadoop.io.serializer.WritableSerialization",
+            "cascading.tuple.hadoop.TupleSerialization"
+        } );
 
         ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setDefaults(defaults);
 

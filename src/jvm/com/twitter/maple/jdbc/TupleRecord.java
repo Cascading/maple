@@ -40,7 +40,7 @@ public class TupleRecord implements DBWritable {
     public void write( PreparedStatement statement ) throws SQLException {
         int statementParameterCount = statement.getParameterMetaData().getParameterCount();
         for( int i = 0, sz = Math.min( tuple.size(), statementParameterCount ); i < sz; i++ )
-            statement.setObject( i + 1, tuple.get( i ) );
+            statement.setObject( i + 1, tuple.getObject( i ) );
         for ( int i = tuple.size(), sz = statementParameterCount; i < sz; ++ i ) {
             statement.setObject( i + 1, null );
         }
@@ -50,7 +50,7 @@ public class TupleRecord implements DBWritable {
         tuple = new Tuple();
 
         for( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ )
-            tuple.add( (Comparable) resultSet.getObject( i + 1 ) );
+            tuple.add( resultSet.getObject( i + 1 ) );
     }
 
 }

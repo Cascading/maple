@@ -27,6 +27,8 @@ import java.util.List;
  * @see JDBCScheme
  */
 public class TableDesc implements Serializable {
+    private static final long serialVersionUID = 2526946099774572740L;
+
     /** Field tableName */
     protected final String tableName;
     /** Field columnNames */

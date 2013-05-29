@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class StdoutTap extends Lfs {
+    private static final long serialVersionUID = -1059663889045644321L;
 
     public StdoutTap() {
         super(new SequenceFile(Fields.ALL), getTempDir());

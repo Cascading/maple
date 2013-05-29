@@ -11,3 +11,6 @@
 /.lein-deps-sum
 /build
 /.gradle
+/.classpath
+/.project
+/.settings

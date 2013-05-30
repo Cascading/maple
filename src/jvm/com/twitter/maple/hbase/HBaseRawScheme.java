@@ -27,6 +27,9 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.twitter.elephantbird.mapred.input.DeprecatedInputFormatValueCopier;
+import com.twitter.elephantbird.mapred.input.DeprecatedInputFormatWrapper;
+
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
 import cascading.scheme.SinkCall;
@@ -36,8 +39,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
-
-//import com.twitter.maple.hbase.mapred.TableInputFormat;
 
 /**
  * The HBaseScheme class is a {@link Scheme} subclass. It is used in conjunction
@@ -63,6 +64,7 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 	private String[] familyNames;
 
 	private boolean writeNulls = true;
+
 	/**
 	 * Constructor HBaseScheme creates a new HBaseScheme instance.
 	 * 
@@ -182,7 +184,8 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 	}
 
 	private ImmutableBytesWritable getBytes(Object obj) {
-		if (null == obj) return new ImmutableBytesWritable(new byte[0]);
+		if (null == obj)
+			return new ImmutableBytesWritable(new byte[0]);
 		if (obj instanceof ImmutableBytesWritable)
 			return (ImmutableBytesWritable) obj;
 		else if (obj instanceof String)
@@ -198,9 +201,10 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 		else if (obj instanceof Double)
 			return new ImmutableBytesWritable(Bytes.toBytes((Double) obj));
 		else
-			throw new IllegalArgumentException("cannot convert object to ImmutableBytesWritable, class=" + obj.getClass().getName());
+			throw new IllegalArgumentException("cannot convert object to ImmutableBytesWritable, class="
+					+ obj.getClass().getName());
 	}
-	
+
 	private ColumnName parseColumn(String column) {
 		ColumnName ret = new ColumnName();
 		int pos = column.indexOf(":");
@@ -231,14 +235,12 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 	@Override
 	public void sourceConfInit(FlowProcess<JobConf> process, Tap<JobConf, RecordReader, OutputCollector> tap,
 			JobConf conf) {
-		// DeprecatedInputFormatWrapper.setInputFormat(TableInputFormat.class,
-		// conf);
-		conf.setInputFormat(com.twitter.maple.hbase.mapred.TableInputFormat.class);
+		DeprecatedInputFormatWrapper.setInputFormat(org.apache.hadoop.hbase.mapreduce.TableInputFormat.class, conf,
+				ValueCopier.class);
 		if (null != familyNames) {
 			String columns = Util.join(this.familyNames, " ");
 			LOG.debug("sourcing from column families: {}", columns);
-			// conf.set(TableInputFormat.SCAN_COLUMNS, columns);
-			conf.set(com.twitter.maple.hbase.mapred.TableInputFormat.COLUMN_LIST, columns);
+			conf.set(org.apache.hadoop.hbase.mapreduce.TableInputFormat.SCAN_COLUMNS, columns);
 		}
 	}
 
@@ -267,5 +269,18 @@ public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollecto
 		int result = super.hashCode();
 		result = 31 * result + (familyNames != null ? Arrays.hashCode(familyNames) : 0);
 		return result;
+	}
+
+	public static class ValueCopier implements DeprecatedInputFormatValueCopier<Result> {
+
+		public ValueCopier() {
+		}
+
+		public void copyValue(Result oldValue, Result newValue) {
+			if (null != oldValue && null != newValue) {
+				oldValue.copyFrom(newValue);
+			}
+		}
+
 	}
 }

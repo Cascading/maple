@@ -38,8 +38,7 @@ import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 
-import com.twitter.maple.hbase.mapred.TableInputFormat;
-//import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 
 /**
  * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with

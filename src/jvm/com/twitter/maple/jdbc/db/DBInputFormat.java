@@ -62,7 +62,6 @@ public class DBInputFormat<T extends DBWritable>
         private JobConf job;
         private DBInputSplit split;
         private long pos = 0;
-
         /**
          * @param split The InputSplit to read data for
          * @throws SQLException
@@ -107,7 +106,11 @@ public class DBInputFormat<T extends DBWritable>
                 }
 
                 query.append(" FROM ").append(tableName);
-                query.append(" AS ").append(tableName); //in hsqldb this is necessary
+
+                if (!job.getBoolean("cascading.jdbc.skipas")) {
+                  query.append(" AS ").append(tableName); //in hsqldb this is necessary
+                }
+
 
                 if (conditions != null && conditions.length() > 0)
                     query.append(" WHERE (").append(conditions).append(")");

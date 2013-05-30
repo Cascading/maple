@@ -66,6 +66,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     private static final Logger LOG = LoggerFactory.getLogger(JDBCTap.class);
 
     private final String id = UUID.randomUUID().toString();
+    private boolean skipAsStatement = false;
 
     /** Field connectionUrl */
     String connectionUrl;
@@ -216,6 +217,16 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         this.batchSize = batchSize;
     }
 
+
+    /**
+     * Method setBatchSize sets the batchSize of this JDBCTap object.
+     *
+     * @param batchSize the batchSize of this JDBCTap object.
+     */
+    public void setSkipAsStatement( boolean skip ) {
+      this.skipAsStatement = skip;
+    }
+
     /**
      * Method getBatchSize returns the batchSize of this JDBCTap object.
      *
@@ -309,6 +320,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     {
         // a hack for MultiInputFormat to see that there is a child format
         FileInputFormat.setInputPaths( conf, getPath() );
+        conf.setBoolean("cascading.jdbc.skipas", skipAsStatement);
 
         if( username == null )
             DBConfiguration.configureDB(conf, driverClassName, connectionUrl);

@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -67,6 +68,7 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 	private String quorumNames;
 	/** Field tableName */
 	private String tableName;
+	private String base64Scan;
 
 	/**
 	 * Constructor HBaseTap creates a new HBaseTap instance.
@@ -124,6 +126,22 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 		super(HBaseFullScheme, sinkMode);
 		this.quorumNames = quorumNames;
 		this.tableName = tableName;
+	}
+
+	/**
+	 * Constructor HBaseTap creates a new HBaseTap instance.
+	 * 
+	 * @param quorumNames
+	 * @param tableName
+	 * @param HBaseFullScheme
+	 * @param base64Scan
+	 * @param sinkMode
+	 */
+	public HBaseRawTap(String quorumNames, String tableName, HBaseRawScheme HBaseFullScheme, String base64Scan, SinkMode sinkMode) {
+		super(HBaseFullScheme, sinkMode);
+		this.quorumNames = quorumNames;
+		this.tableName = tableName;
+		this.base64Scan = base64Scan;
 	}
 
 	/**
@@ -253,6 +271,9 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
 		LOG.debug("sourcing from table: {}", tableName);
 		conf.set(TableInputFormat.INPUT_TABLE, tableName);
+		if (null != base64Scan)
+			conf.set(TableInputFormat.SCAN, base64Scan);
+			
 		super.sourceConfInit(process, conf);
 	}
 

@@ -17,6 +17,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import cascading.util.Util;
@@ -167,6 +168,44 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
         public void sink(FlowProcess<Properties> flowProcess, SinkCall<SinkContext, OutputCollector> sinkCall)
                 throws IOException {
             throw new RuntimeException("LocalJDBCTap#sink is never called");
+        }
+
+        @Override
+        public Fields getSinkFields() {
+            if ( scheme != null ) {
+                return scheme.getSinkFields();
+            } else {
+                return super.getSinkFields();
+            }
+        }
+
+        @Override
+        public void setSinkFields( Fields sinkFields ) {
+          if ( scheme != null ) {
+              scheme.setSinkFields( sinkFields );
+              super.setSinkFields( getSinkFields() );
+          } else {
+              super.setSinkFields( sinkFields );
+          }
+        }
+
+        @Override
+        public Fields getSourceFields() {
+            if ( scheme != null ) {
+                return scheme.getSourceFields();
+            } else {
+                return super.getSourceFields();
+            }
+        }
+
+        @Override
+        public void setSourceFields( Fields sourceFields ) {
+            if ( scheme != null ) {
+                scheme.setSourceFields( sourceFields );
+                super.setSourceFields( getSourceFields() );
+            } else {
+                super.setSourceFields( sourceFields );
+            }
         }
     }
 

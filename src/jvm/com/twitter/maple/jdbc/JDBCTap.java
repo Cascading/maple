@@ -382,6 +382,8 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     public int executeUpdate( String updateString )
     {
         Connection connection = null;
+        Statement statement = null;
+        boolean success = false;
         int result;
 
         try
@@ -392,12 +394,13 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
             {
                 LOG.info( "executing update: {}", updateString );
 
-                Statement statement = connection.createStatement();
+                statement = connection.createStatement();
 
                 result = statement.executeUpdate( updateString );
 
                 connection.commit();
-                statement.close();
+
+                success = true;
             }
             catch( SQLException exception )
             {
@@ -408,6 +411,12 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         {
             try
             {
+                if ( ! success ) {
+                    connection.rollback();
+                }
+                if ( statement != null ) {
+                    statement.close();
+                }
                 if( connection != null )
                     connection.close();
             }
@@ -432,7 +441,10 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     public List<Object[]> executeQuery( String queryString, int returnResults )
     {
         Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
         List<Object[]> result = Collections.emptyList();
+        boolean success = false;
 
         try
         {
@@ -442,15 +454,15 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
             {
                 LOG.info( "executing query: {}", queryString );
 
-                Statement statement = connection.createStatement();
+                statement = connection.createStatement();
 
-                ResultSet resultSet = statement.executeQuery( queryString ); // we don't care about results
+                resultSet = statement.executeQuery( queryString ); // we don't care about results
 
                 if( returnResults != 0 )
                     result = copyResultSet( resultSet, returnResults == -1 ? Integer.MAX_VALUE : returnResults );
 
                 connection.commit();
-                statement.close();
+                success = true;
             }
             catch( SQLException exception )
             {
@@ -461,6 +473,15 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         {
             try
             {
+                if ( ! success ) {
+                    connection.rollback();
+                }
+                if ( resultSet != null ) {
+                    resultSet.close();
+                }
+                if ( statement != null ) {
+                    statement.close();
+                }
                 if( connection != null )
                     connection.close();
             }

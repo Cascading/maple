@@ -4,9 +4,9 @@ apply plugin: 'maven'
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-group = "com.twitter"
+group = "com.twitter.eyt"
 archivesBaseName = 'maple'
-version = "0.2.8-SNAPSHOT++"
+version = "0.2.8.6"
 status = 'integration'
 
 
@@ -53,4 +53,29 @@ dependencies {
     exclude group: 'hadoop-core'
   }
   compile group: 'org.clojure', name: 'clojure', version: '1.2.1'
+}
+
+// Conjars target
+repoUrl = 'http://conjars.org/repo/'
+repoUserName = System.properties[ 'publish.repo.userName' ]
+repoPassword = System.properties[ 'publish.repo.password' ]
+
+uploadArchives {
+   repositories.mavenDeployer {
+      configuration = configurations.archives
+
+      repository( url : repoUrl ) {
+         authentication( userName: repoUserName, password: repoPassword )
+      }
+      pom.project {
+         description 'Updates to com.twitter.maple which provides a set of taps, including a JDBC, In-Memory, etc.'
+         licenses {
+            license {
+               name 'The Apache Software License, Version 2.0'
+               url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+               distribution 'repo'
+            }
+         }
+      }
+   }
 }

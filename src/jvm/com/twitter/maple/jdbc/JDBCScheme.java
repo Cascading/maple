@@ -607,6 +607,14 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         return result;
     }
 
+    public void setInputFormatClass( Class<? extends DBInputFormat> inputFormatClass ) {
+        this.inputFormatClass = inputFormatClass;
+    }
+
+    public void setOutputFormatClass( Class<? extends DBOutputFormat> outputFormatClass ) {
+        this.outputFormatClass = outputFormatClass;
+    }
+
     @Override
     public boolean equals( Object object ) {
         if( this == object )

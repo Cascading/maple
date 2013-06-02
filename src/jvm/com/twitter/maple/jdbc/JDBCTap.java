@@ -343,7 +343,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         super.sinkConfInit( process, conf );
     }
 
-    private Connection createConnection()
+    protected Connection createConnection()
     {
         try
         {

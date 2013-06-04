@@ -42,8 +42,8 @@ import cascading.tuple.TupleEntryIterator;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 
 /**
- * The HBaseTap class is a {@link Tap} subclass. It is used in conjunction with
- * the {@HBaseFullScheme} to allow for the reading and writing
+ * The HBaseRawTap class is a {@link Tap} subclass. It is used in conjunction with
+ * the {@HBaseRawScheme} to allow for the reading and writing
  * of data to and from a HBase cluster.
  */
 @SuppressWarnings({ "deprecation", "rawtypes" })
@@ -295,13 +295,17 @@ public class HBaseRawTap extends Tap<JobConf, RecordReader, OutputCollector> {
 			return false;
 		}
 
+		if (base64Scan != null ? !base64Scan.equals(hBaseTap.base64Scan) : hBaseTap.base64Scan != null) {
+			return false;
+		}
+
 		return true;
 	}
 
 	@Override
 	public int hashCode() {
 		int result = super.hashCode();
-		result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
+		result = 31 * result + (tableName != null ? tableName.hashCode() : 0) + (base64Scan != null ? base64Scan.hashCode() : 0);
 		return result;
 	}
 }

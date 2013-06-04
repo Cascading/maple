@@ -41,11 +41,11 @@ import cascading.tuple.TupleEntry;
 import cascading.util.Util;
 
 /**
- * The HBaseScheme class is a {@link Scheme} subclass. It is used in conjunction
- * with the {@HBaseTap} to allow for the reading and writing of data
+ * The HBaseRawScheme class is a {@link Scheme} subclass. It is used in conjunction
+ * with the {@HBaseRawTap} to allow for the reading and writing of data
  * to and from a HBase cluster.
  * 
- * @see HBaseTap
+ * @see HBaseRawTap
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
 public class HBaseRawScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {

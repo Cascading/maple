@@ -23,12 +23,10 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.mapred.TableInputFormatBase;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.util.StringUtils;
@@ -36,67 +34,67 @@ import org.apache.hadoop.util.StringUtils;
 /**
  * Convert HBase tabular data into a format that is consumable by Map/Reduce.
  */
-public class TableInputFormat extends TableInputFormatBase implements
-    JobConfigurable {
-  private final Log LOG = LogFactory.getLog(TableInputFormat.class);
+@SuppressWarnings("deprecation")
+public class TableInputFormat extends TableInputFormatBase implements JobConfigurable {
+	private final Log LOG = LogFactory.getLog(TableInputFormat.class);
 
-  /**
-   * space delimited list of columns
-   */
-  public static final String COLUMN_LIST = "hbase.mapred.tablecolumns";
+	/**
+	 * space delimited list of columns
+	 */
+	public static final String COLUMN_LIST = "hbase.mapred.tablecolumns";
 
-  /**
-   * Use this jobconf param to specify the input table
-   */
-  public static final String INPUT_TABLE = "hbase.mapred.inputtable";
+	/**
+	 * Use this jobconf param to specify the input table
+	 */
+	public static final String INPUT_TABLE = "hbase.mapred.inputtable";
 
-  public void configure(JobConf job) {
-    String tableName = TableInputFormat.getTableName(job);
-    String colArg = job.get(COLUMN_LIST);
-    String[] colNames = colArg.split(" ");
-    byte [][] m_cols = new byte[colNames.length][];
-    for (int i = 0; i < m_cols.length; i++) {
-      m_cols[i] = Bytes.toBytes(colNames[i]);
-    }
-    setInputColumns(m_cols);
-    try {
-      setHTable(new HTable(HBaseConfiguration.create(job), tableName));
-    } catch (Exception e) {
-      LOG.error(StringUtils.stringifyException(e));
-    }
-  }
+	public void configure(JobConf job) {
+		String tableName = TableInputFormat.getTableName(job);
+		String colArg = job.get(COLUMN_LIST);
+		if (null != colArg) {
+			String[] colNames = colArg.split(" ");
+			byte[][] m_cols = new byte[colNames.length][];
+			for (int i = 0; i < m_cols.length; i++) {
+				m_cols[i] = Bytes.toBytes(colNames[i]);
+			}
+			setInputColumns(m_cols);
+		}
+		try {
+			setHTable(new HTable(HBaseConfiguration.create(job), tableName));
+		} catch (Exception e) {
+			LOG.error(StringUtils.stringifyException(e));
+		}
+	}
 
-  public void validateInput(JobConf job) throws IOException {
-    // expecting exactly one path
-    String tableName = TableInputFormat.getTableName(job);
-    if (tableName == null) {
-      throw new IOException("expecting one table name");
-    }
+	public void validateInput(JobConf job) throws IOException {
+		// expecting exactly one path
+		String tableName = TableInputFormat.getTableName(job);
+		if (tableName == null) {
+			throw new IOException("expecting one table name");
+		}
 
-    // connected to table?
-    if (getHTable() == null) {
-      throw new IOException("could not connect to table '" +
-        tableName + "'");
-    }
+		// connected to table?
+		if (getHTable() == null) {
+			throw new IOException("could not connect to table '" + tableName + "'");
+		}
 
-    // expecting at least one column
-    String colArg = job.get(COLUMN_LIST);
-    if (colArg == null || colArg.length() == 0) {
-      throw new IOException("expecting at least one column");
-    }
-  }
+		// expecting at least one column
+		String colArg = job.get(COLUMN_LIST);
+		if (colArg == null || colArg.length() == 0) {
+			throw new IOException("expecting at least one column");
+		}
+	}
 
-  public static void setTableName(JobConf job, String tableName) {
-    // Make sure that table has not been set before
-    String oldTableName = getTableName(job);
-    if(oldTableName != null) {
-      throw new RuntimeException("table name already set to: '"
-        + oldTableName + "'");
-    }
-    job.set(INPUT_TABLE, tableName);
-  }
+	public static void setTableName(JobConf job, String tableName) {
+		// Make sure that table has not been set before
+		String oldTableName = getTableName(job);
+		if (oldTableName != null) {
+			throw new RuntimeException("table name already set to: '" + oldTableName + "'");
+		}
+		job.set(INPUT_TABLE, tableName);
+	}
 
-  public static String getTableName(JobConf job) {
-    return job.get(INPUT_TABLE);
-  }
+	public static String getTableName(JobConf job) {
+		return job.get(INPUT_TABLE);
+	}
 }

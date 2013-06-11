@@ -1,7 +1,6 @@
 *.iml
 *.ipr
 *.iws
-/pom.xml
 *jar
 /lib
 /classes
@@ -9,3 +8,8 @@
 /.lein-failures
 /checkouts
 /.lein-deps-sum
+/target/
+/.settings/
+.classpath
+.project
+/.externalToolBuilders/

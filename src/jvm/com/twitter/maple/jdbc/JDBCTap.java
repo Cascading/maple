@@ -12,6 +12,7 @@
 
 package com.twitter.maple.jdbc;
 
+import cascading.flow.FlowException;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.tap.SinkMode;
@@ -21,6 +22,8 @@ import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import com.twitter.maple.jdbc.db.DBConfiguration;
+
+import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,9 +32,12 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.sql.*;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Class JDBCTap is a {@link Tap} sub-class that provides read and write access to a RDBMS via JDBC drivers.
@@ -272,9 +278,49 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         return true;
     }
 
+    private static String readStringAsObject( ObjectInputStream in ) throws IOException
+      {
+      try
+        {
+        return (String) in.readObject();
+        }
+      catch( ClassNotFoundException exception )
+        {
+        throw new FlowException( "could not read string", exception );
+        }
+      }
+
+    private static Map<String, String> deserializeMapBase64( String string, boolean decompress ) throws IOException
+    {
+    if( string == null || string.length() == 0 )
+      return null;
+
+    ObjectInputStream in = null;
+
+    try
+      {
+      ByteArrayInputStream bytes = new ByteArrayInputStream( Base64.decodeBase64( string.getBytes() ) );
+
+      in = new ObjectInputStream( decompress ? new GZIPInputStream( bytes ) : bytes );
+
+      int mapSize = in.readInt();
+      Map<String, String> map = new HashMap<String, String>( mapSize );
+
+      for( int j = 0; j < mapSize; j++ )
+        map.put( in.readUTF(), readStringAsObject( in ) );
+
+      return map;
+      }
+    finally
+      {
+      if( in != null )
+        in.close();
+      }
+    }
+    
     private JobConf getSourceConf( FlowProcess<JobConf> flowProcess, JobConf conf, String property )
         throws IOException {
-        Map<String, String> priorConf = HadoopUtil.deserializeMapBase64( property, true );
+        Map<String, String> priorConf = deserializeMapBase64( property, true );
         return flowProcess.mergeMapIntoConfig( conf, priorConf );
     }
 

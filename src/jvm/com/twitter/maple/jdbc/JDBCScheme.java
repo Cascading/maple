@@ -74,7 +74,8 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String conditions, long limit, String[] updateBy )
     {
-        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit, updateBy != null ? new Fields( updateBy ) : null, updateBy );
+        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit,
+            updateBy != null ? new Fields( updateBy ) : null, updateBy );
     }
 
     /**
@@ -91,7 +92,8 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String conditions, long limit, String[] updateBy, Boolean tableAlias )
     {
-        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit, updateBy != null ? new Fields( updateBy ) : null, updateBy, tableAlias );
+        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit,
+            updateBy != null ? new Fields( updateBy ) : null, updateBy, tableAlias );
     }
 
     /**

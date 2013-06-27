@@ -59,6 +59,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     private String selectQuery;
     private String countQuery;
     private long limit = -1;
+    private Boolean tableAlias = true;
 
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.
@@ -73,7 +74,28 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String conditions, long limit, String[] updateBy )
     {
-        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit, updateBy != null ? new Fields( updateBy ) : null, updateBy );
+        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit,
+            updateBy != null ? new Fields( updateBy ) : null,
+            updateBy );
+    }
+
+    /**
+     * Constructor JDBCScheme creates a new JDBCScheme instance.
+     *
+     * @param inputFormatClass  of type Class<? extends DBInputFormat>
+     * @param outputFormatClass of type Class<? extends DBOutputFormat>
+     * @param columns           of type String[]
+     * @param orderBy           of type String[]
+     * @param conditions        of type String
+     * @param limit             of type long
+     * @param updateBy          of type String[]
+     * @param tableAlias        of type Boolean
+     */
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String conditions, long limit, String[] updateBy, Boolean tableAlias )
+    {
+        this( inputFormatClass, outputFormatClass, new Fields( columns ), columns, orderBy, conditions, limit,
+            updateBy != null ? new Fields( updateBy ) : null,
+            updateBy, tableAlias );
     }
 
     /**
@@ -88,8 +110,9 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      * @param limit             of type long
      * @param updateByFields    of type Fields
      * @param updateBy          of type String[]
+     * @param tableAlias        of type Boolean
      */
-    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, Fields columnFields, String[] columns, String[] orderBy, String conditions, long limit, Fields updateByFields, String[] updateBy )
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, Fields columnFields, String[] columns, String[] orderBy, String conditions, long limit, Fields updateByFields, String[] updateBy, Boolean tableAlias)
     {
         this.columnFields = columnFields;
 
@@ -117,9 +140,29 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         this.orderBy = orderBy;
         this.conditions = conditions;
         this.limit = limit;
+        this.tableAlias = tableAlias;
 
         this.inputFormatClass = inputFormatClass;
         this.outputFormatClass = outputFormatClass;
+    }
+
+    /**
+     * Constructor JDBCScheme creates a new JDBCScheme instance.
+     *
+     * @param inputFormatClass  of type Class<? extends DBInputFormat>
+     * @param outputFormatClass of type Class<? extends DBOutputFormat>
+     * @param columnFields      of type Fields
+     * @param columns           of type String[]
+     * @param orderBy           of type String[]
+     * @param conditions        of type String
+     * @param limit             of type long
+     * @param updateByFields    of type Fields
+     * @param updateBy          of type String[]
+     */
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, Fields columnFields, String[] columns, String[] orderBy, String conditions, long limit, Fields updateByFields, String[] updateBy)
+    {
+        this(inputFormatClass, outputFormatClass, columnFields, columns, orderBy, conditions, limit, updateByFields, updateBy, true );
+
     }
 
     private void verifyColumns( Fields columnFields, String[] columns )
@@ -309,7 +352,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( String[] columns, String conditions, long limit )
     {
-        this( null, null, columns, null, conditions, limit, null );
+        this( null, null, new Fields( columns ), columns, null, conditions, limit, null, null );
     }
 
     /**
@@ -356,7 +399,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( String[] columns, long limit )
     {
-        this( null, null, columns, null, null, limit, null );
+        this( null, null, new Fields( columns ), columns, null, null, limit, null, null );
     }
 
     /**
@@ -405,7 +448,35 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, String[] columns, String selectQuery, String countQuery, long limit )
     {
-        this( inputFormatClass, new Fields( columns ), columns, selectQuery, countQuery, limit );
+        this( inputFormatClass, new Fields( columns ), columns, selectQuery, countQuery, limit, true );
+    }
+
+    /**
+     * Constructor JDBCScheme creates a new JDBCScheme instance.
+     *
+     * @param inputFormatClass of type Class<? extends DBInputFormat>
+     * @param columnFields     of type Fields
+     * @param columns          of type String[]
+     * @param selectQuery      of type String
+     * @param countQuery       of type String
+     * @param limit            of type long
+     * @param tableAlias       of type Boolean
+     */
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Fields columnFields, String[] columns, String selectQuery, String countQuery, long limit, Boolean tableAlias )
+    {
+        this.columnFields = columnFields;
+
+        verifyColumns( columnFields, columns );
+
+        setSourceFields( columnFields );
+
+        this.columns = columns;
+        this.selectQuery = selectQuery.trim().replaceAll( ";$", "" );
+        this.countQuery = countQuery.trim().replaceAll( ";$", "" );
+        this.limit = limit;
+        this.tableAlias = tableAlias;
+
+        this.inputFormatClass = inputFormatClass;
     }
 
     /**
@@ -418,20 +489,9 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      * @param countQuery       of type String
      * @param limit            of type long
      */
-    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Fields columnFields, String[] columns, String selectQuery, String countQuery, long limit )
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Fields columnFields, String[] columns, String selectQuery, String countQuery, long limit)
     {
-        this.columnFields = columnFields;
-
-        verifyColumns( columnFields, columns );
-
-        setSourceFields( columnFields );
-
-        this.columns = columns;
-        this.selectQuery = selectQuery.trim().replaceAll( ";$", "" );
-        this.countQuery = countQuery.trim().replaceAll( ";$", "" );
-        this.limit = limit;
-
-        this.inputFormatClass = inputFormatClass;
+        this(inputFormatClass, columnFields, columns, selectQuery, countQuery, limit, true );
     }
 
     /**
@@ -514,11 +574,11 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         int concurrentReads = ( (JDBCTap) tap ).concurrentReads;
 
         if( selectQuery != null )
-            DBInputFormat.setInput( conf, TupleRecord.class, selectQuery, countQuery, limit, concurrentReads );
+            DBInputFormat.setInput( conf, TupleRecord.class, selectQuery, countQuery, limit, concurrentReads, tableAlias );
         else {
             String tableName = ( (JDBCTap) tap ).getTableName();
             String joinedOrderBy = orderBy != null ? Util.join( orderBy, ", " ) : null;
-            DBInputFormat.setInput( conf, TupleRecord.class, tableName, conditions, joinedOrderBy, limit, concurrentReads, columns );
+            DBInputFormat.setInput( conf, TupleRecord.class, tableName, conditions, joinedOrderBy, limit, concurrentReads, tableAlias, columns );
         }
 
         if( inputFormatClass != null )

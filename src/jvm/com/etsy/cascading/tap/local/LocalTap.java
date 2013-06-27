@@ -18,6 +18,7 @@ import cascading.scheme.SourceCall;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.Lfs;
+import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import cascading.util.Util;
@@ -150,6 +151,18 @@ public class LocalTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordReader, 
         }
 
         @Override
+        public Fields retrieveSourceFields(FlowProcess<Properties> flowProcess,
+                Tap tap) {
+            return scheme.retrieveSourceFields(new HadoopFlowProcess(defaults), lfs);
+        }
+
+        @Override
+        public void presentSourceFields(FlowProcess<Properties> flowProcess, 
+                Tap tap, Fields fields) {
+            scheme.presentSourceFields(new HadoopFlowProcess(defaults), lfs, fields);
+        }
+
+        @Override
         public void sourceConfInit(FlowProcess<Properties> flowProcess,
                 Tap<Properties, RecordReader, OutputCollector> tap, Properties conf) {
             JobConf jobConf = mergeDefaults("LocalScheme#sourceConfInit", conf, defaults);
@@ -157,6 +170,18 @@ public class LocalTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordReader, 
             overwriteProperties(conf, jobConf);
         }
 
+        @Override
+        public Fields retrieveSinkFields(FlowProcess<Properties> flowProcess,
+                Tap tap) {
+            return scheme.retrieveSinkFields(new HadoopFlowProcess(defaults), lfs);
+        }
+
+        @Override
+        public void presentSinkFields(FlowProcess<Properties> flowProcess, 
+                Tap tap, Fields fields) {
+            scheme.presentSinkFields(new HadoopFlowProcess(defaults), lfs, fields);
+        }
+            
         @Override
         public void sinkConfInit(FlowProcess<Properties> flowProcess,
                 Tap<Properties, RecordReader, OutputCollector> tap, Properties conf) {

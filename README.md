@@ -4,13 +4,13 @@ A collection of useful Cascading taps.
 
 ## Building
 
-Maple uses [Leiningen 1.X](https://github.com/technomancy/leiningen/) to build. (Again, not yet compatible with Lein 2.x)
+Maple uses [Leiningen](https://github.com/technomancy/leiningen/) 2.0 to build.
 
 1. lein deps
 2. lein compile
 3. lein uberjar
 
-The above should build a jar with all dependencies. 
+The above should build a jar with all dependencies.
 
 ## Usage
 

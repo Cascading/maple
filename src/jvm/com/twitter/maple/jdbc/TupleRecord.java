@@ -46,7 +46,7 @@ public class TupleRecord implements DBWritable {
         tuple = new Tuple();
 
         for( int i = 0; i < resultSet.getMetaData().getColumnCount(); i++ )
-            tuple.add( (Comparable) resultSet.getObject( i + 1 ) );
+            tuple.add( resultSet.getObject( i + 1 ) );
     }
 
 }

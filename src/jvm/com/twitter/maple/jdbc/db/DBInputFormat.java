@@ -107,7 +107,10 @@ public class DBInputFormat<T extends DBWritable>
                 }
 
                 query.append(" FROM ").append(tableName);
-                query.append(" AS ").append(tableName); //in hsqldb this is necessary
+
+                if (dbConf.getTableAlias()) {
+                    query.append(" AS ").append(tableName); //in hsqldb this is necessary
+                }
 
                 if (conditions != null && conditions.length() > 0)
                     query.append(" WHERE (").append(conditions).append(")");
@@ -405,7 +408,7 @@ public class DBInputFormat<T extends DBWritable>
      */
     public static void setInput(JobConf job, Class<? extends DBWritable> inputClass,
         String tableName, String conditions, String orderBy, long limit, int concurrentReads,
-        String... fieldNames) {
+        Boolean tableAlias, String... fieldNames) {
         job.setInputFormat(DBInputFormat.class);
 
         DBConfiguration dbConf = new DBConfiguration(job);
@@ -415,6 +418,7 @@ public class DBInputFormat<T extends DBWritable>
         dbConf.setInputFieldNames(fieldNames);
         dbConf.setInputConditions(conditions);
         dbConf.setInputOrderBy(orderBy);
+        dbConf.setTableAlias(tableAlias);
 
         if (limit != -1)
             dbConf.setInputLimit(limit);
@@ -435,7 +439,7 @@ public class DBInputFormat<T extends DBWritable>
      * @param concurrentReads
      */
     public static void setInput(JobConf job, Class<? extends DBWritable> inputClass,
-        String selectQuery, String countQuery, long limit, int concurrentReads) {
+        String selectQuery, String countQuery, long limit, int concurrentReads, Boolean tableAlias) {
         job.setInputFormat(DBInputFormat.class);
 
         DBConfiguration dbConf = new DBConfiguration(job);
@@ -443,6 +447,7 @@ public class DBInputFormat<T extends DBWritable>
         dbConf.setInputClass(inputClass);
         dbConf.setInputQuery(selectQuery);
         dbConf.setInputCountQuery(countQuery);
+        dbConf.setTableAlias(tableAlias);
 
         if (limit != -1)
             dbConf.setInputLimit(limit);

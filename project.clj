@@ -1,4 +1,4 @@
-(defproject com.twitter/maple "0.2.8"
+(defproject com.twitter/maple "0.2.9"
   :source-paths ["src/clj"]
   :java-source-paths ["src/jvm"]
   :url "http://github.com/Cascading/maple"

@@ -24,9 +24,12 @@ import cascading.tuple.TupleEntry;
 import cascading.util.Util;
 import com.twitter.maple.jdbc.db.DBInputFormat;
 import com.twitter.maple.jdbc.db.DBOutputFormat;
+import com.twitter.maple.jdbc.db.DataDrivenDBInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -46,6 +49,8 @@ import java.util.Arrays;
  */
 public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]>
 {
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCScheme.class);
+
     private Class<? extends DBInputFormat> inputFormatClass;
     private Class<? extends DBOutputFormat> outputFormatClass;
     private String[] columns;
@@ -60,6 +65,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     private String countQuery;
     private long limit = -1;
     private Boolean tableAlias = true;
+    private Boolean dataDrivenSplits = false;
 
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.
@@ -114,6 +120,26 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, Fields columnFields, String[] columns, String[] orderBy, String conditions, long limit, Fields updateByFields, String[] updateBy, Boolean tableAlias)
     {
+        this(inputFormatClass, outputFormatClass, columnFields, columns, orderBy, conditions, limit, updateByFields, updateBy, tableAlias, false);
+    }
+
+    /**
+     * Constructor JDBCScheme creates a new JDBCScheme instance.
+     *
+     * @param inputFormatClass  of type Class<? extends DBInputFormat>
+     * @param outputFormatClass of type Class<? extends DBOutputFormat>
+     * @param columnFields      of type Fields
+     * @param columns           of type String[]
+     * @param orderBy           of type String[]
+     * @param conditions        of type String
+     * @param limit             of type long
+     * @param updateByFields    of type Fields
+     * @param updateBy          of type String[]
+     * @param tableAlias        of type Boolean
+     * @param dataDrivenSplits  of type Boolean
+     */
+    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, Fields columnFields, String[] columns, String[] orderBy, String conditions, long limit, Fields updateByFields, String[] updateBy, Boolean tableAlias, Boolean dataDrivenSplits)
+    {
         this.columnFields = columnFields;
 
         verifyColumns( columnFields, columns );
@@ -141,6 +167,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         this.conditions = conditions;
         this.limit = limit;
         this.tableAlias = tableAlias;
+        this.dataDrivenSplits = dataDrivenSplits;
 
         this.inputFormatClass = inputFormatClass;
         this.outputFormatClass = outputFormatClass;
@@ -551,6 +578,109 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     }
 
     /**
+     * Builder for JDBCScheme instances.
+     */
+    public static class Builder {
+        private Class<? extends DBInputFormat> inputFormatClass = null;
+        private Class<? extends DBOutputFormat> outputFormatClass = null;
+        private String[] columns;
+        private String[] orderBy = null;
+        private String conditions = null;
+        private String[] updateBy = null;
+        private Fields updateByFields = null;
+        private Fields columnFields = null;
+        private Boolean customQuery = false;
+        private String selectQuery;
+        private String countQuery;
+        private long limit = -1;
+        private Boolean tableAlias = true;
+        private Boolean dataDrivenSplits = false;
+
+        public Builder setInputFormatClass(Class<? extends DBInputFormat> inputFormatClass) {
+            this.inputFormatClass = inputFormatClass;
+            return this;
+        }
+
+        public Builder setOutputFormatClass(Class<? extends DBOutputFormat> outputFormatClass) {
+            this.outputFormatClass = outputFormatClass;
+            return this;
+        }
+
+        public Builder setColumns(String[] columns) {
+            this.columns = columns;
+            return this;
+        }
+
+        public Builder setOrderBy(String[] orderBy) {
+            this.orderBy = orderBy;
+            return this;
+        }
+
+        public Builder setConditions(String conditions) {
+            this.conditions = conditions;
+            return this;
+        }
+
+        public Builder setUpdateBy(String[] updateBy) {
+            this.updateBy = updateBy;
+            return this;
+        }
+
+        public Builder setUpdateByFields(Fields updateByFields) {
+            this.updateByFields = updateByFields;
+            return this;
+        }
+
+        public Builder setColumnFields(Fields columnFields) {
+            this.columnFields = columnFields;
+            return this;
+        }
+
+        public Builder setCustomQuery(String selectQuery, String countQuery) {
+            this.customQuery = true;
+            this.selectQuery = selectQuery.trim().replaceAll(";$", "");
+            this.countQuery = countQuery.trim().replaceAll(";$", "");
+            return this;
+        }
+
+        public Builder setLimit(long limit) {
+            this.limit = limit;
+            return this;
+        }
+
+        public Builder setTableAlias(Boolean tableAlias) {
+            this.tableAlias = tableAlias;
+            return this;
+        }
+
+        public Builder setDataDrivenSplits(Boolean dataDrivenSplits) {
+            this.dataDrivenSplits = dataDrivenSplits;
+            return this;
+        }
+
+        /**
+         * Constructs a new instance using the values set in the Builder.
+         * @return a new JDBCScheme instance using values set in the Builder.
+         */
+        public JDBCScheme build() {
+            if(columnFields == null && columns != null) {
+                columnFields = new Fields(columns);
+            }
+
+            if(updateByFields == null && updateBy != null) {
+                updateByFields = new Fields(updateBy);
+            }
+
+            if(customQuery) {
+                LOG.warn("A custom query is set. The following fields will not be used: outputFormatClass, orderBy, conditions, updateByFields, updateBy, dataDrivenSplits");
+                return new JDBCScheme(inputFormatClass, columnFields, columns, selectQuery, countQuery, limit, tableAlias);
+            } else {
+                return new JDBCScheme(inputFormatClass, outputFormatClass, columnFields, columns, orderBy, conditions, limit, updateByFields, updateBy, tableAlias, dataDrivenSplits);
+            }
+        }
+    }
+
+    /**
      * Method getColumns returns the columns of this JDBCScheme object.
      *
      * @return the columns (type String[]) of this JDBCScheme object.
@@ -578,7 +708,14 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         else {
             String tableName = ( (JDBCTap) tap ).getTableName();
             String joinedOrderBy = orderBy != null ? Util.join( orderBy, ", " ) : null;
-            DBInputFormat.setInput( conf, TupleRecord.class, tableName, conditions, joinedOrderBy, limit, concurrentReads, tableAlias, columns );
+            if(dataDrivenSplits) {
+                if(orderBy == null || orderBy.length != 1) {
+                    throw new IllegalArgumentException("OrderBy must be defined to split on when using dataDrivenSplits. Only one field is allowed");
+                }
+                DataDrivenDBInputFormat.setInput( conf, TupleRecord.class, tableName, conditions, joinedOrderBy, limit, concurrentReads, tableAlias, columns );
+            } else {
+                DBInputFormat.setInput( conf, TupleRecord.class, tableName, conditions, joinedOrderBy, limit, concurrentReads, tableAlias, columns );
+            }
         }
 
         if( inputFormatClass != null )

@@ -338,7 +338,10 @@ public class DBInputFormat<T extends DBWritable>
         try {
             Statement statement = connection.createStatement();
 
-            ResultSet results = statement.executeQuery(getCountQuery());
+            String countQuery = getCountQuery();
+
+            LOG.info("Getting splits: " + countQuery);
+            ResultSet results = statement.executeQuery(countQuery);
 
             long count = 0;
 

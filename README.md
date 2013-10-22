@@ -6,11 +6,12 @@ A collection of useful Cascading taps.
 
 Maple uses [Leiningen](https://github.com/technomancy/leiningen/) 2.0 to build.
 
-1. lein deps
-2. lein compile
-3. lein uberjar
+1. lein with-profile dev deps
+2. lein with-profile dev uberjar
+3. lein with-profile dev install
 
-The above should build a jar with all dependencies.
+The above should build a jar with all dependencies. And then `install` will add this jar to your
+local maven repository in ~/.m2/repositories.
 
 ## Usage
 

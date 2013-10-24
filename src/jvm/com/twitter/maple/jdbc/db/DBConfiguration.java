@@ -208,11 +208,11 @@ public class DBConfiguration {
         job.setBoolean(DBConfiguration.INPUT_TABLE_ALIAS, alias);
     }
 
-    Boolean getReplaceOnInsert() {
+    boolean getReplaceOnInsert() {
       return job.getBoolean(DBConfiguration.REPLACE_ON_INSERT, false);
     }
 
-    void setReplaceOnInsert(Boolean replaceOnInsert) {
+    void setReplaceOnInsert(boolean replaceOnInsert) {
       job.setBoolean(DBConfiguration.REPLACE_ON_INSERT, replaceOnInsert);
     }
 

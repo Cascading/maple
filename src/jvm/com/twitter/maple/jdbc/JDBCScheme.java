@@ -64,7 +64,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      * If true, will use mysql's 'REPLACE INTO' to replace existing rows with the same key as new
      * rows. See http://dev.mysql.com/doc/refman/5.0/en/replace.html.
      */
-    private Boolean replaceOnInsert = false;
+    private boolean replaceOnInsert = false;
 
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.

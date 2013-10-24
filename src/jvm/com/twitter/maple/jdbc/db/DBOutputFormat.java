@@ -197,16 +197,23 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
      * @param table      the table to insert into
      * @param fieldNames the fields to insert into. If field names are unknown, supply an array of
      *                   nulls.
+     * @param replaceOnInsert if true, uses "REPLACE INTO" instead of "INSERT INTO"
      */
-    protected String constructInsertQuery(String table, String[] fieldNames) {
+    protected String constructInsertQuery(
+      String table,
+      String[] fieldNames,
+      boolean replaceOnInsert) {
         if (fieldNames == null) {
             throw new IllegalArgumentException("Field names may not be null");
         }
 
         StringBuilder query = new StringBuilder();
 
-        // query.append("INSERT INTO ").append(table);
-        query.append("REPLACE INTO ").append(table);
+        if (replaceOnInsert) {
+          query.append("REPLACE INTO ").append(table);
+        } else {
+          query.append("INSERT INTO ").append(table);
+        }
 
         if (fieldNames.length > 0 && fieldNames[0] != null) {
             query.append(" (");
@@ -292,12 +299,13 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
         String[] fieldNames = dbConf.getOutputFieldNames();
         String[] updateNames = dbConf.getOutputUpdateFieldNames();
         int batchStatements = dbConf.getBatchStatementsNum();
+        boolean replaceOnInsert = dbConf.getReplaceOnInsert();
 
         Connection connection = dbConf.getConnection();
 
         configureConnection(connection);
 
-        String sqlInsert = constructInsertQuery(tableName, fieldNames);
+        String sqlInsert = constructInsertQuery(tableName, fieldNames, replaceOnInsert);
         PreparedStatement insertPreparedStatement;
 
         try {

@@ -83,6 +83,9 @@ public class DBConfiguration {
     /** Boolean to include table name alias in the input SELECT statement */
     public static final String INPUT_TABLE_ALIAS = "mapred.jdbc.input.table.alias";
 
+    /** Boolean to use REPLACE INTO instead of INSERT INTO when outputting tuples to MySQL. */
+    public static final String REPLACE_ON_INSERT = "mapred.jdbc.output.replace.on.insert";
+
     /** Output table name */
     public static final String OUTPUT_TABLE_NAME_PROPERTY = "mapred.jdbc.output.table.name";
 
@@ -203,6 +206,14 @@ public class DBConfiguration {
 
     void setTableAlias(Boolean alias) {
         job.setBoolean(DBConfiguration.INPUT_TABLE_ALIAS, alias);
+    }
+
+    Boolean getReplaceOnInsert() {
+      return job.getBoolean(DBConfiguration.REPLACE_ON_INSERT, false);
+    }
+
+    void setReplaceOnInsert(Boolean replaceOnInsert) {
+      job.setBoolean(DBConfiguration.REPLACE_ON_INSERT, replaceOnInsert);
     }
 
     String getInputQuery() {

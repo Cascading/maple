@@ -205,7 +205,8 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
 
         StringBuilder query = new StringBuilder();
 
-        query.append("INSERT INTO ").append(table);
+        // query.append("INSERT INTO ").append(table);
+        query.append("REPLACE INTO ").append(table);
 
         if (fieldNames.length > 0 && fieldNames[0] != null) {
             query.append(" (");
@@ -317,6 +318,12 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
             throw new IOException("unable to create statement for: " + sqlUpdate, exception);
         }
 
+        if (insertPreparedStatement != null) {
+          LOG.info("Executing insert statement:\n " + sqlInsert);
+        }
+        if (updatePreparedStatement != null) {
+          LOG.info("Executing update statement:\n " + sqlUpdate);
+        }
         return new DBRecordWriter(connection, insertPreparedStatement, updatePreparedStatement, batchStatements);
     }
 
@@ -339,9 +346,19 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
      * @param dbOutputFormatClass
      * @param tableName           The table to insert data into
      * @param fieldNames          The field names in the table. If unknown, supply the appropriate
+     * @param updateFields
+     * @param batchSize
+     * @param replaceOnInsert     Boolean which says whether inserts should replace.
      */
-    public static void setOutput(JobConf job, Class<? extends DBOutputFormat> dbOutputFormatClass,
-        String tableName, String[] fieldNames, String[] updateFields, int batchSize) {
+    public static void setOutput(
+        JobConf job,
+        Class<? extends DBOutputFormat> dbOutputFormatClass,
+        String tableName,
+        String[] fieldNames,
+        String[] updateFields,
+        int batchSize,
+        boolean replaceOnInsert
+    ) {
         if (dbOutputFormatClass == null) { job.setOutputFormat(DBOutputFormat.class); } else {
             job.setOutputFormat(dbOutputFormatClass);
         }
@@ -354,6 +371,7 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
 
         dbConf.setOutputTableName(tableName);
         dbConf.setOutputFieldNames(fieldNames);
+        dbConf.setReplaceOnInsert(replaceOnInsert);
 
         if (updateFields != null) { dbConf.setOutputUpdateFieldNames(updateFields); }
 

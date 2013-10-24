@@ -60,6 +60,11 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     private String countQuery;
     private long limit = -1;
     private Boolean tableAlias = true;
+    /**
+     * If true, will use mysql's 'REPLACE INTO' to replace existing rows with the same key as new
+     * rows. See http://dev.mysql.com/doc/refman/5.0/en/replace.html.
+     */
+    private Boolean replaceOnInsert = false;
 
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.
@@ -174,16 +179,27 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.
      *
+     * Specify replaceOnInsert if you want to change the default insert behaviro.
+     *
      * @param inputFormatClass  of type Class<? extends DBInputFormat>
      * @param outputFormatClass of type Class<? extends DBOutputFormat>
      * @param columns           of type String[]
      * @param orderBy           of type String[]
      * @param conditions        of type String
      * @param updateBy          of type String[]
+     * @param replaceOnInsert   boolean
      */
-    public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String conditions, String[] updateBy )
-    {
+    public JDBCScheme(
+        Class<? extends DBInputFormat> inputFormatClass,
+        Class<? extends DBOutputFormat> outputFormatClass,
+        String[] columns,
+        String[] orderBy,
+        String conditions,
+        String[] updateBy,
+        boolean replaceOnInsert
+    ) {
         this( inputFormatClass, outputFormatClass, columns, orderBy, conditions, -1, updateBy );
+        this.replaceOnInsert = replaceOnInsert;
     }
 
     /**
@@ -214,7 +230,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( Class<? extends DBInputFormat> inputFormatClass, Class<? extends DBOutputFormat> outputFormatClass, String[] columns, String[] orderBy, String[] updateBy )
     {
-        this( inputFormatClass, outputFormatClass, columns, orderBy, null, updateBy );
+        this( inputFormatClass, outputFormatClass, columns, orderBy, null, updateBy, false );
     }
 
     /**
@@ -295,7 +311,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( String[] columns, String[] orderBy, String conditions )
     {
-        this( null, null, columns, orderBy, conditions, null );
+        this( null, null, columns, orderBy, conditions, null, false);
     }
 
     public JDBCScheme( Fields columnFields, String[] columns, String[] orderBy, String conditions )
@@ -376,7 +392,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     public JDBCScheme( String[] columns, String conditions )
     {
-        this( null, null, columns, null, conditions, null );
+        this( null, null, columns, null, conditions, null, false);
     }
 
     /**
@@ -593,7 +609,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
 
         String tableName = ( (JDBCTap) tap ).getTableName();
         int batchSize = ( (JDBCTap) tap ).getBatchSize();
-        DBOutputFormat.setOutput( conf, DBOutputFormat.class, tableName, columns, updateBy, batchSize );
+        DBOutputFormat.setOutput( conf, DBOutputFormat.class, tableName, columns, updateBy, batchSize, replaceOnInsert );
 
         if( outputFormatClass != null )
             conf.setOutputFormat( outputFormatClass );

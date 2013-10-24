@@ -208,36 +208,33 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
         }
 
         StringBuilder query = new StringBuilder();
-
-        if (replaceOnInsert) {
-          query.append("REPLACE INTO ").append(table);
-        } else {
-          query.append("INSERT INTO ").append(table);
-        }
+        query.append("INSERT INTO ").append(table);
 
         if (fieldNames.length > 0 && fieldNames[0] != null) {
             query.append(" (");
-
             for (int i = 0; i < fieldNames.length; i++) {
                 query.append(fieldNames[i]);
-
                 if (i != fieldNames.length - 1) { query.append(","); }
             }
-
             query.append(")");
-
         }
 
         query.append(" VALUES (");
-
         for (int i = 0; i < fieldNames.length; i++) {
             query.append("?");
-
             if (i != fieldNames.length - 1) { query.append(","); }
         }
+        query.append(")");
 
-        query.append(");");
+        if (replaceOnInsert) {
+          query.append(" ON DUPLICATE KEY UPDATE ");
+          for (int i = 0; i < fieldNames.length; i++) {
+              query.append(String.format("%s=VALUES(%s)", fieldNames[i], fieldNames[i]));
+              if (i != fieldNames.length - 1) { query.append(","); }
+          }
+        }
 
+        query.append(";");
         return query.toString();
     }
 

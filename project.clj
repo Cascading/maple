@@ -1,8 +1,6 @@
 (defproject com.twitter/maple "0.3.1-SNAPSHOT"
   :source-paths ["src/clj"]
   :java-source-paths ["src/jvm"]
-  :javac-target "1.6"
-  :javac-options ["-Xlint:deprecation"]
   :url "http://github.com/Cascading/maple"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}

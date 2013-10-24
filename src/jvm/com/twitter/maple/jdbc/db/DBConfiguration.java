@@ -83,7 +83,7 @@ public class DBConfiguration {
     /** Boolean to include table name alias in the input SELECT statement */
     public static final String INPUT_TABLE_ALIAS = "mapred.jdbc.input.table.alias";
 
-    /** Boolean to use REPLACE INTO instead of INSERT INTO when outputting tuples to MySQL. */
+    /** Boolean to use ON DUPLICATE KEY UPDATE for INSERTs when outputting tuples to MySQL. */
     public static final String REPLACE_ON_INSERT = "mapred.jdbc.output.replace.on.insert";
 
     /** Output table name */

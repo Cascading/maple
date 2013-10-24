@@ -197,7 +197,7 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
      * @param table      the table to insert into
      * @param fieldNames the fields to insert into. If field names are unknown, supply an array of
      *                   nulls.
-     * @param replaceOnInsert if true, uses "REPLACE INTO" instead of "INSERT INTO"
+     * @param replaceOnInsert if true, uses "ON DUPLICATE KEY UPDATE" for the insert statement.
      */
     protected String constructInsertQuery(
       String table,

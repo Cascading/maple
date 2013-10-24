@@ -179,7 +179,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
     /**
      * Constructor JDBCScheme creates a new JDBCScheme instance.
      *
-     * Specify replaceOnInsert if you want to change the default insert behaviro.
+     * Specify replaceOnInsert if you want to change the default insert behavior.
      *
      * @param inputFormatClass  of type Class<? extends DBInputFormat>
      * @param outputFormatClass of type Class<? extends DBOutputFormat>

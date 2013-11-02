@@ -189,6 +189,16 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
           }
         }
 
+        public Fields retrieveSourceFields( FlowProcess<Properties> flowProcess, Tap tap )
+        {
+          return scheme.retrieveSourceFields( (FlowProcess) flowProcess, tap );
+        }
+
+        public void presentSourceFields( FlowProcess<Properties> flowProcess, Tap tap, Fields fields )
+        {
+          scheme.presentSourceFields( (FlowProcess) flowProcess, tap, fields );
+        }
+
         @Override
         public Fields getSourceFields() {
             if ( scheme != null ) {

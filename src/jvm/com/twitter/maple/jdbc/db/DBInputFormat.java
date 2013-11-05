@@ -99,11 +99,14 @@ public class DBInputFormat<T extends DBWritable>
             if (dbConf.getInputQuery() == null) {
                 query.append("SELECT ");
 
-                for (int i = 0; i < fieldNames.length; i++) {
+                for (int i = 0, sz = fieldNames == null ? 0 : fieldNames.length; i < sz; i++) {
                     query.append(fieldNames[i]);
 
                     if (i != fieldNames.length - 1)
                         query.append(", ");
+                }
+                if ( fieldNames == null ) {
+                    query.append("*");
                 }
 
                 query.append(" FROM ").append(tableName);

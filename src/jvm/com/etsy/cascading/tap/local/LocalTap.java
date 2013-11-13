@@ -70,6 +70,14 @@ public class LocalTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordReader, 
         // assumes the list is non-empty, which we mock up, here
         defaults.set("mapred.input.dir", path);
 
+        // HACK: Parquet uses this property to generate unique file names
+        defaults.set("mapred.task.partition", "0");
+
+        // HACK: disable Parquet counters
+        defaults.set("parquet.benchmark.bytes.read", "false");
+        defaults.set("parquet.benchmark.bytes.total", "false");
+        defaults.set("parquet.benchmark.time.read", "false");
+
         ((LocalScheme<SourceCtx, SinkCtx>) this.getScheme()).setDefaults(defaults);
 
         lfs = new Lfs(scheme, path);

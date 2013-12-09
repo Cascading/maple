@@ -184,6 +184,9 @@ public class LocalJDBCTap<SourceCtx, SinkCtx> extends Tap<Properties, RecordRead
           if ( scheme != null ) {
               scheme.setSinkFields( sinkFields );
               super.setSinkFields( getSinkFields() );
+              if ( getSourceFields().isAll() || getSourceFields().isUnknown() ) {
+                  setSourceFields( sinkFields );
+              }
           } else {
               super.setSinkFields( sinkFields );
           }

@@ -58,9 +58,11 @@ dependencies {
 }
 
 // Conjars target
-repoUrl = 'http://conjars.org/repo/'
-repoUserName = System.properties[ 'publish.repo.userName' ]
-repoPassword = System.properties[ 'publish.repo.password' ]
+ext {
+   repoUrl = 'http://conjars.org/repo/'
+   repoUserName = System.properties[ 'publish.repo.userName' ]
+   repoPassword = System.properties[ 'publish.repo.password' ]
+}
 
 uploadArchives {
    repositories.mavenDeployer {

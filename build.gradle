@@ -62,6 +62,8 @@ ext {
    repoUrl = 'http://conjars.org/repo/'
    repoUserName = System.properties[ 'publish.repo.userName' ]
    repoPassword = System.properties[ 'publish.repo.password' ]
+   if( System.properties[ 'publish.repo.url' ] )
+      repoUrl = System.properties[ 'publish.repo.url' ] 
 }
 
 uploadArchives {

@@ -290,7 +290,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         if( !isSink() )
             throw new TapException( "this tap may not be used as a sink, no TableDesc defined" );
 
-        LOG.info("Creating JDBCTapCollector output instance");
+        LOG.debug("Creating JDBCTapCollector output instance");
         JDBCTapCollector jdbcCollector = new JDBCTapCollector( flowProcess, this );
 
         jdbcCollector.prepare();
@@ -574,7 +574,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
         try
         {
-            LOG.info( "test table exists: {}", tableDesc.tableName );
+            LOG.debug( "test table exists: {}", tableDesc.tableName );
 
             executeQuery( tableDesc.getTableExistsQuery(), 0 );
         }

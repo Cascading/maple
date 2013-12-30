@@ -27,7 +27,9 @@ configurations {
 repositories {
   mavenLocal()
   mavenCentral()
-  mavenRepo name: 'conjars', url: 'http://conjars.org/repo/'
+  maven {
+     url 'http://conjars.org/repo/'
+  }
 }
 
 dependencies {
@@ -56,9 +58,13 @@ dependencies {
 }
 
 // Conjars target
-repoUrl = 'http://conjars.org/repo/'
-repoUserName = System.properties[ 'publish.repo.userName' ]
-repoPassword = System.properties[ 'publish.repo.password' ]
+ext {
+   repoUrl = 'http://conjars.org/repo/'
+   repoUserName = System.properties[ 'publish.repo.userName' ]
+   repoPassword = System.properties[ 'publish.repo.password' ]
+   if( System.properties[ 'publish.repo.url' ] )
+      repoUrl = System.properties[ 'publish.repo.url' ] 
+}
 
 uploadArchives {
    repositories.mavenDeployer {

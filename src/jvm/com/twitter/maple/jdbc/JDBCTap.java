@@ -20,7 +20,9 @@ import cascading.tap.TapException;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+
 import com.twitter.maple.jdbc.db.DBConfiguration;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -61,7 +63,10 @@ import java.util.*;
  * @see com.twitter.maple.jdbc.db.DBInputFormat
  * @see com.twitter.maple.jdbc.db.DBOutputFormat
  */
+@SuppressWarnings("rawtypes")
 public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
+    private static final long serialVersionUID = -7243280650801344522L;
+
     /** Field LOG */
     private static final Logger LOG = LoggerFactory.getLogger(JDBCTap.class);
 
@@ -272,6 +277,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         return true;
     }
 
+    @SuppressWarnings({ "unused", "unchecked" })
     private JobConf getSourceConf( FlowProcess<JobConf> flowProcess, JobConf conf, String property )
         throws IOException {
         Map<String, String> priorConf = HadoopUtil.deserializeBase64( property, conf, Map.class );

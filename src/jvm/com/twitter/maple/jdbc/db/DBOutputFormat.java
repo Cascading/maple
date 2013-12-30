@@ -352,6 +352,7 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
      * @param batchSize
      * @param replaceOnInsert     Boolean which says whether inserts should replace.
      */
+    @SuppressWarnings("rawtypes")
     public static void setOutput(
         JobConf job,
         Class<? extends DBOutputFormat> dbOutputFormatClass,

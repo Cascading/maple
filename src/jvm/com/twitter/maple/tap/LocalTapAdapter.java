@@ -25,6 +25,7 @@ import cascading.util.Util;
 /**
  * This class is intended to wrap a Hadoop-based Tap to be a Local-tap.
  */
+@SuppressWarnings("rawtypes")
 public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends Tap<Properties, RecordReader, OutputCollector> {
   private static final long serialVersionUID = 8552212538252771309L;
 
@@ -45,6 +46,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
    * @param path Path for this tap
    * @param config Default configuration required for the tap.
    */
+  @SuppressWarnings("unchecked")
   public LocalTapAdapter( Scheme scheme, SinkMode sinkMode, HADOOP_TAP tap, String path, JobConf config ) {
     super( new LocalScheme<SourceCtx, SinkCtx>( scheme ), sinkMode );
     this.tap = tap;
@@ -53,6 +55,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
   }
 
 
+  @SuppressWarnings("unchecked")
   private void setup( JobConf config ) {
     /*
      * LocalTapAdapter requires your system Hadoop configuration for
@@ -77,6 +80,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public TupleEntryIterator openForRead( FlowProcess<Properties> flowProcess, RecordReader input ) throws IOException {
     JobConf jobConf = mergeDefaults( "LocalTapAdapter#openForRead", flowProcess.getConfigCopy(), defaults );
@@ -84,6 +88,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public TupleEntryCollector openForWrite( FlowProcess<Properties> flowProcess, OutputCollector output ) throws IOException {
     JobConf jobConf = mergeDefaults( "LocalTapAdapter#openForWrite", flowProcess.getConfigCopy(), defaults );
@@ -91,24 +96,28 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean createResource( Properties conf ) throws IOException {
     return tap.createResource( mergeDefaults( "LocalTapAdapter#createResource", conf, defaults ) );
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean deleteResource( Properties conf ) throws IOException {
     return tap.deleteResource( mergeDefaults( "LocalTapAdapter#deleteResource", conf, defaults ) );
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean resourceExists( Properties conf ) throws IOException {
     return tap.resourceExists( mergeDefaults( "LocalTapAdapter#resourceExists", conf, defaults ) );
   }
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public long getModifiedTime( Properties conf ) throws IOException {
     return tap.getModifiedTime( mergeDefaults( "LocalTapAdapter#getModifiedTime", conf, defaults ) );
@@ -169,6 +178,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
     }
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sourceConfInit( FlowProcess<Properties> flowProcess, Tap<Properties, RecordReader, OutputCollector> tap, Properties conf ) {
       JobConf jobConf = mergeDefaults( "LocalScheme#sourceConfInit", conf, defaults );
@@ -177,6 +187,7 @@ public class LocalTapAdapter<HADOOP_TAP extends Tap, SourceCtx, SinkCtx> extends
     }
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sinkConfInit( FlowProcess<Properties> flowProcess, Tap<Properties, RecordReader, OutputCollector> tap, Properties conf ) {
       JobConf jobConf = mergeDefaults( "LocalScheme#sinkConfInit", conf, defaults );

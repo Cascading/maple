@@ -322,7 +322,7 @@ public class DBInputFormat<T extends DBWritable>
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public RecordReader<LongWritable, T> getRecordReader(InputSplit split, JobConf job,
         Reporter reporter) throws IOException {
         Class inputClass = dbConf.getInputClass();

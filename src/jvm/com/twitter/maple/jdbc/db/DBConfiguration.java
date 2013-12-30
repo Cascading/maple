@@ -132,9 +132,9 @@ public class DBConfiguration {
         configureDB(job, driverClass, dbUrl, null, null);
     }
 
-    private Configuration job;
+    protected Configuration job;
 
-    DBConfiguration(Configuration job) {
+    public DBConfiguration(Configuration job) {
         this.job = job;
     }
 
@@ -144,7 +144,7 @@ public class DBConfiguration {
      * @throws ClassNotFoundException
      * @throws SQLException
      */
-    Connection getConnection() throws IOException {
+    public Connection getConnection() throws IOException {
         try {
             Class.forName(job.get(DBConfiguration.DRIVER_CLASS_PROPERTY));
         } catch (ClassNotFoundException exception) {

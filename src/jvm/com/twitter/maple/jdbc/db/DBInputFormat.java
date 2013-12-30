@@ -283,7 +283,7 @@ public class DBInputFormat<T extends DBWritable>
 
     /** {@inheritDoc} */
     public void configure(JobConf job) {
-        dbConf = new DBConfiguration(job);
+        dbConf = createDBConfiguration(job);
 
         tableName = dbConf.getInputTableName();
         fieldNames = dbConf.getInputFieldNames();
@@ -298,6 +298,14 @@ public class DBInputFormat<T extends DBWritable>
         }
 
         configureConnection(connection);
+    }
+
+    /**
+     * Creates a new Database Configuration for the job, allowing you to override things like the
+     * connection pooling.
+     */
+    public DBConfiguration createDBConfiguration( JobConf job ) {
+        return new DBConfiguration(job );
     }
 
     protected void configureConnection(Connection connection) {

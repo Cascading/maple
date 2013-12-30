@@ -287,7 +287,7 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
     /** {@inheritDoc} */
     public RecordWriter<K, V> getRecordWriter(FileSystem filesystem, JobConf job, String name,
         Progressable progress) throws IOException {
-        DBConfiguration dbConf = new DBConfiguration(job);
+        DBConfiguration dbConf = createDBConfiguration(job);
 
         String tableName = dbConf.getOutputTableName();
         String[] fieldNames = dbConf.getOutputFieldNames();
@@ -327,6 +327,14 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
           LOG.info("Executing update statement:\n " + sqlUpdate);
         }
         return new DBRecordWriter(connection, insertPreparedStatement, updatePreparedStatement, batchStatements);
+    }
+
+    /**
+     * Creates a new Database Configuration for the job, allowing you to override things like the
+     * connection pooling.
+     */
+    public DBConfiguration createDBConfiguration( JobConf job ) {
+        return new DBConfiguration(job );
     }
 
     protected void configureConnection(Connection connection) {

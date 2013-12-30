@@ -473,7 +473,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         {
             try
             {
-                if ( ! success ) {
+                if ( connection != null && ! success ) {
                     connection.rollback();
                 }
                 if ( resultSet != null ) {

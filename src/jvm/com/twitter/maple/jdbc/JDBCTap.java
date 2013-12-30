@@ -68,19 +68,19 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     private final String id = UUID.randomUUID().toString();
 
     /** Field connectionUrl */
-    String connectionUrl;
+    protected String connectionUrl;
     /** Field username */
-    String username;
+    protected String username;
     /** Field password */
-    String password;
+    protected String password;
     /** Field driverClassName */
-    String driverClassName;
+    protected String driverClassName;
     /** Field tableDesc */
-    TableDesc tableDesc;
+    protected TableDesc tableDesc;
     /** Field batchSize */
-    int batchSize = 1000;
+    protected int batchSize = 1000;
     /** Field concurrentReads */
-    int concurrentReads = 0;
+    protected int concurrentReads = 0;
 
     /**
      * Constructor JDBCTap creates a new JDBCTap instance.

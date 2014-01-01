@@ -14,13 +14,13 @@ import java.io.IOException;
 import java.util.List;
 
 public class MemorySinkTap extends Lfs {
+    private static final long serialVersionUID = 2341505558519666493L;
+
     private List<Tuple> results;
-    private Fields fields;
 
     public MemorySinkTap(List<Tuple> tuples, Fields fields) {
         super(new SequenceFile(Fields.ALL), getTempDir());
         this.results = tuples;
-        this.fields = fields;
     }
 
     public MemorySinkTap(List<Tuple> tuples) {
@@ -52,7 +52,6 @@ public class MemorySinkTap extends Lfs {
             results.add(tuple.getTupleCopy());
 
             if (first_time) {
-                fields = tuple.getFields();
                 first_time = false;
             }
         }

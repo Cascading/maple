@@ -23,6 +23,7 @@ import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
 import cascading.tuple.TupleEntrySchemeCollector;
+
 import org.apache.hadoop.mapred.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ import java.io.IOException;
  * Class JDBCTapCollector is a kind of {@link cascading.tuple.TupleEntrySchemeCollector} that writes tuples to the resource managed by
  * a particular {@link JDBCTap} instance.
  */
+@SuppressWarnings("rawtypes")
 public class JDBCTapCollector extends TupleEntrySchemeCollector implements OutputCollector
 {
     /** Field LOG */
@@ -56,6 +58,7 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
      * @param tap               of type Tap
      * @throws IOException when fails to initialize
      */
+    @SuppressWarnings("unchecked")
     public JDBCTapCollector( FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap ) throws IOException {
         super( flowProcess, tap.getScheme() );
         this.hadoopFlowProcess = flowProcess;
@@ -77,6 +80,11 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
         super.prepare();
     }
 
+    public JobConf getJobConf() {
+        return conf;
+    }
+
+    @SuppressWarnings("unchecked")
     private void initialize() throws IOException {
         tap.sinkConfInit( hadoopFlowProcess, conf );
 
@@ -93,7 +101,7 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
     public void close() {
         try {
             LOG.info( "closing tap collector for: {}", tap );
-            writer.close( reporter );
+            if ( writer != null ) writer.close( reporter );
         } catch( IOException exception ) {
             LOG.warn( "exception closing: {}", exception );
             throw new TapException( "exception closing JDBCTapCollector", exception );
@@ -109,6 +117,7 @@ public class JDBCTapCollector extends TupleEntrySchemeCollector implements Outpu
      * @param writable           of type Writable
      * @throws IOException when
      */
+    @SuppressWarnings("unchecked")
     public void collect( Object writableComparable, Object writable ) throws IOException {
         if (hadoopFlowProcess instanceof HadoopFlowProcess)
             ((HadoopFlowProcess) hadoopFlowProcess).getReporter().progress();

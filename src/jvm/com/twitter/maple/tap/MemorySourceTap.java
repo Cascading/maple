@@ -23,9 +23,12 @@ import java.util.UUID;
 
 public class MemorySourceTap extends SourceTap<JobConf, RecordReader<TupleWrapper, NullWritable>>
     implements Serializable {
+    private static final long serialVersionUID = -3883105721794069739L;
 
     public static class MemorySourceScheme
         extends Scheme<JobConf, RecordReader<TupleWrapper, NullWritable>, Void, Object[], Void> {
+
+        private static final long serialVersionUID = 919689539720607932L;
 
         private transient List<Tuple> tuples;
         private final String id;

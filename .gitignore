@@ -9,3 +9,10 @@
 /.lein-failures
 /checkouts
 /.lein-deps-sum
+/build
+/.gradle
+/.classpath
+/.project
+/.settings
+/bin/
+/bin

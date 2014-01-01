@@ -27,14 +27,16 @@ import java.util.List;
  * @see JDBCScheme
  */
 public class TableDesc implements Serializable {
+    private static final long serialVersionUID = 2526946099774572740L;
+
     /** Field tableName */
-    String tableName;
+    protected final String tableName;
     /** Field columnNames */
-    String[] columnNames;
+    protected String[] columnNames;
     /** Field columnDefs */
-    String[] columnDefs;
+    protected String[] columnDefs;
     /** Field primaryKeys */
-    String[] primaryKeys;
+    protected String[] primaryKeys;
 
     /**
      * Constructor TableDesc creates a new TableDesc instance.

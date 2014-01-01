@@ -22,8 +22,10 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.util.Util;
+
 import com.twitter.maple.jdbc.db.DBInputFormat;
 import com.twitter.maple.jdbc.db.DBOutputFormat;
+
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
@@ -44,8 +46,10 @@ import java.util.Arrays;
  * <p/>
  * Override this class, {@link DBInputFormat}, and {@link DBOutputFormat} to specialize for a given vendor database.
  */
+@SuppressWarnings("rawtypes")
 public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]>
 {
+    private static final long serialVersionUID = 2527660956910961832L;
     private Class<? extends DBInputFormat> inputFormatClass;
     private Class<? extends DBOutputFormat> outputFormatClass;
     private String[] columns;
@@ -623,6 +627,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         sourceCall.setContext( pair );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean source( FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall ) throws IOException
     {
@@ -644,6 +649,7 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
         sourceCall.setContext( null );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sink( FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall ) throws IOException {
         // it's ok to use NULL here so the collector does not write anything
@@ -681,6 +687,14 @@ public class JDBCScheme extends Scheme<JobConf, RecordReader, OutputCollector, O
      */
     protected Tuple cleanTuple( Tuple result ) {
         return result;
+    }
+
+    public void setInputFormatClass( Class<? extends DBInputFormat> inputFormatClass ) {
+        this.inputFormatClass = inputFormatClass;
+    }
+
+    public void setOutputFormatClass( Class<? extends DBOutputFormat> outputFormatClass ) {
+        this.outputFormatClass = outputFormatClass;
     }
 
     @Override

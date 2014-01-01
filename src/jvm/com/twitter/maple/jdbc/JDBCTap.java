@@ -20,7 +20,9 @@ import cascading.tap.TapException;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+
 import com.twitter.maple.jdbc.db.DBConfiguration;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -61,26 +63,29 @@ import java.util.*;
  * @see com.twitter.maple.jdbc.db.DBInputFormat
  * @see com.twitter.maple.jdbc.db.DBOutputFormat
  */
+@SuppressWarnings("rawtypes")
 public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
+    private static final long serialVersionUID = -7243280650801344522L;
+
     /** Field LOG */
     private static final Logger LOG = LoggerFactory.getLogger(JDBCTap.class);
 
     private final String id = UUID.randomUUID().toString();
 
     /** Field connectionUrl */
-    String connectionUrl;
+    protected String connectionUrl;
     /** Field username */
-    String username;
+    protected String username;
     /** Field password */
-    String password;
+    protected String password;
     /** Field driverClassName */
-    String driverClassName;
+    protected String driverClassName;
     /** Field tableDesc */
-    TableDesc tableDesc;
+    protected TableDesc tableDesc;
     /** Field batchSize */
-    int batchSize = 1000;
+    protected int batchSize = 1000;
     /** Field concurrentReads */
-    int concurrentReads = 0;
+    protected int concurrentReads = 0;
 
     /**
      * Constructor JDBCTap creates a new JDBCTap instance.
@@ -272,9 +277,10 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         return true;
     }
 
+    @SuppressWarnings({ "unused", "unchecked" })
     private JobConf getSourceConf( FlowProcess<JobConf> flowProcess, JobConf conf, String property )
         throws IOException {
-        Map<String, String> priorConf = HadoopUtil.deserializeMapBase64( property, true );
+        Map<String, String> priorConf = HadoopUtil.deserializeBase64( property, conf, Map.class );
         return flowProcess.mergeMapIntoConfig( conf, priorConf );
     }
 
@@ -290,7 +296,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         if( !isSink() )
             throw new TapException( "this tap may not be used as a sink, no TableDesc defined" );
 
-        LOG.info("Creating JDBCTapCollector output instance");
+        LOG.debug("Creating JDBCTapCollector output instance");
         JDBCTapCollector jdbcCollector = new JDBCTapCollector( flowProcess, this );
 
         jdbcCollector.prepare();
@@ -343,7 +349,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         super.sinkConfInit( process, conf );
     }
 
-    private Connection createConnection()
+    protected Connection createConnection()
     {
         try
         {
@@ -382,6 +388,8 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     public int executeUpdate( String updateString )
     {
         Connection connection = null;
+        Statement statement = null;
+        boolean success = false;
         int result;
 
         try
@@ -392,12 +400,13 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
             {
                 LOG.info( "executing update: {}", updateString );
 
-                Statement statement = connection.createStatement();
+                statement = connection.createStatement();
 
                 result = statement.executeUpdate( updateString );
 
                 connection.commit();
-                statement.close();
+
+                success = true;
             }
             catch( SQLException exception )
             {
@@ -408,6 +417,12 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         {
             try
             {
+                if ( ! success ) {
+                    connection.rollback();
+                }
+                if ( statement != null ) {
+                    statement.close();
+                }
                 if( connection != null )
                     connection.close();
             }
@@ -432,7 +447,10 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
     public List<Object[]> executeQuery( String queryString, int returnResults )
     {
         Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
         List<Object[]> result = Collections.emptyList();
+        boolean success = false;
 
         try
         {
@@ -442,15 +460,15 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
             {
                 LOG.info( "executing query: {}", queryString );
 
-                Statement statement = connection.createStatement();
+                statement = connection.createStatement();
 
-                ResultSet resultSet = statement.executeQuery( queryString ); // we don't care about results
+                resultSet = statement.executeQuery( queryString ); // we don't care about results
 
                 if( returnResults != 0 )
                     result = copyResultSet( resultSet, returnResults == -1 ? Integer.MAX_VALUE : returnResults );
 
                 connection.commit();
-                statement.close();
+                success = true;
             }
             catch( SQLException exception )
             {
@@ -461,6 +479,15 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
         {
             try
             {
+                if ( connection != null && ! success ) {
+                    connection.rollback();
+                }
+                if ( resultSet != null ) {
+                    resultSet.close();
+                }
+                if ( statement != null ) {
+                    statement.close();
+                }
                 if( connection != null )
                     connection.close();
             }
@@ -553,7 +580,7 @@ public class JDBCTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
         try
         {
-            LOG.info( "test table exists: {}", tableDesc.tableName );
+            LOG.debug( "test table exists: {}", tableDesc.tableName );
 
             executeQuery( tableDesc.getTableExistsQuery(), 0 );
         }

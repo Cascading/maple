@@ -1,0 +1,87 @@
+defaultTasks 'assemble'
+
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+group = "com.twitter.eyt"
+archivesBaseName = 'maple'
+version = "0.2.8.7"
+status = 'integration'
+
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+sourceSets {
+  main {
+    java {
+      srcDir 'src/jvm'
+    }
+  }
+}
+
+configurations {
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+     url 'http://conjars.org/repo/'
+  }
+}
+
+dependencies {
+  compile group: 'cascading', name: 'cascading-core', version: '2.1.5'
+  compile group: 'cascading', name: 'cascading-hadoop', version: '2.1.5'
+  compile group: 'cascading', name: 'cascading-local', version: '2.1.5' 
+
+  runtime group: 'org.slf4j', name: 'slf4j-api', version: '1.6.1'
+  runtime group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.6.1'
+
+  // hadoop deps
+  compile( group: 'org.apache.hadoop', name: 'hadoop-core', version: '1.0.4' ) {
+    exclude group: 'ant'
+    exclude group: 'junit'
+  }
+
+  runtime group: 'org.apache.hadoop', name: 'hadoop-test', version: '1.0.4'
+  runtime group: 'commons-io', name: 'commons-io', version: '2.1'
+  runtime group: 'javax.ws.rs', name: 'jsr311-api', version: '1.1.1' 
+
+  compile ( group: 'org.apache.hbase', name: 'hbase', version: '0.94.5' ) {
+    exclude group: 'asm'
+    exclude group: 'hadoop-core'
+  }
+  compile group: 'org.clojure', name: 'clojure', version: '1.2.1'
+}
+
+// Conjars target
+ext {
+   repoUrl = 'http://conjars.org/repo/'
+   repoUserName = System.properties[ 'publish.repo.userName' ]
+   repoPassword = System.properties[ 'publish.repo.password' ]
+   if( System.properties[ 'publish.repo.url' ] )
+      repoUrl = System.properties[ 'publish.repo.url' ] 
+}
+
+uploadArchives {
+   repositories.mavenDeployer {
+      configuration = configurations.archives
+
+      repository( url : repoUrl ) {
+         authentication( userName: repoUserName, password: repoPassword )
+      }
+      pom.project {
+         description 'Updates to com.twitter.maple which provides a set of taps, including a JDBC, In-Memory, etc.'
+         licenses {
+            license {
+               name 'The Apache Software License, Version 2.0'
+               url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+               distribution 'repo'
+            }
+         }
+      }
+   }
+}

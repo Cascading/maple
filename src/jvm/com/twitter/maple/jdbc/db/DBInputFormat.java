@@ -99,11 +99,14 @@ public class DBInputFormat<T extends DBWritable>
             if (dbConf.getInputQuery() == null) {
                 query.append("SELECT ");
 
-                for (int i = 0; i < fieldNames.length; i++) {
+                for (int i = 0, sz = fieldNames == null ? 0 : fieldNames.length; i < sz; i++) {
                     query.append(fieldNames[i]);
 
                     if (i != fieldNames.length - 1)
                         query.append(", ");
+                }
+                if ( fieldNames == null ) {
+                    query.append("*");
                 }
 
                 query.append(" FROM ").append(tableName);
@@ -145,6 +148,14 @@ public class DBInputFormat<T extends DBWritable>
                 statement.close();
             } catch (SQLException exception) {
                 throw new IOException("unable to commit and close", exception);
+            } finally {
+                try {
+                    connection.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Closing the connection raised an exception", sqe );
+                } finally {
+                    connection = null;
+                }
             }
         }
 
@@ -280,13 +291,21 @@ public class DBInputFormat<T extends DBWritable>
 
     /** {@inheritDoc} */
     public void configure(JobConf job) {
-        dbConf = new DBConfiguration(job);
+        dbConf = createDBConfiguration(job);
 
         tableName = dbConf.getInputTableName();
         fieldNames = dbConf.getInputFieldNames();
         conditions = dbConf.getInputConditions();
         limit = dbConf.getInputLimit();
         maxConcurrentReads = dbConf.getMaxConcurrentReadsNum();
+
+        if ( connection != null ) {
+            try {
+                connection.close();
+            } catch ( SQLException sqe ) {
+                LOG.warn( "Error closing connection prior to getting new connection", sqe );
+            }
+        }
 
         try {
             connection = dbConf.getConnection();
@@ -295,6 +314,14 @@ public class DBInputFormat<T extends DBWritable>
         }
 
         configureConnection(connection);
+    }
+
+    /**
+     * Creates a new Database Configuration for the job, allowing you to override things like the
+     * connection pooling.
+     */
+    public DBConfiguration createDBConfiguration( JobConf job ) {
+        return new DBConfiguration(job );
     }
 
     protected void configureConnection(Connection connection) {
@@ -319,13 +346,20 @@ public class DBInputFormat<T extends DBWritable>
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public RecordReader<LongWritable, T> getRecordReader(InputSplit split, JobConf job,
         Reporter reporter) throws IOException {
         Class inputClass = dbConf.getInputClass();
         try {
             return new DBRecordReader((DBInputSplit) split, inputClass, job);
         } catch (SQLException exception) {
+            if ( connection != null ) {
+                try {
+                    connection.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing connection", sqe );
+                }
+            }
             throw new IOException(exception.getMessage(), exception);
         }
     }
@@ -335,10 +369,12 @@ public class DBInputFormat<T extends DBWritable>
         // use the configured value if avail
         chunks = maxConcurrentReads == 0 ? chunks : maxConcurrentReads;
 
+        Statement statement = null;
+        ResultSet results = null;
         try {
-            Statement statement = connection.createStatement();
+            statement = connection.createStatement();
 
-            ResultSet results = statement.executeQuery(getCountQuery());
+            results = statement.executeQuery(getCountQuery());
 
             long count = 0;
 
@@ -351,7 +387,9 @@ public class DBInputFormat<T extends DBWritable>
             long chunkSize = (count / chunks);
 
             results.close();
+            results = null;
             statement.close();
+            statement = null;
 
             InputSplit[] splits = new InputSplit[chunks];
 
@@ -371,6 +409,21 @@ public class DBInputFormat<T extends DBWritable>
             return splits;
         } catch (SQLException e) {
             throw new IOException(e.getMessage());
+        } finally {
+            if ( results != null ) {
+                try {
+                    results.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing statement", sqe );
+                }
+            }
+            if ( statement != null ) {
+                try {
+                    statement.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing statement", sqe );
+                }
+            }
         }
     }
 

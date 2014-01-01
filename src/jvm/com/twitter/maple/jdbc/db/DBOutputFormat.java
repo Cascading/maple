@@ -93,6 +93,8 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
                     connection.close();
                 } catch (SQLException exception) {
                     throw new IOException("unable to close connection", exception);
+                } finally {
+                    connection = null;
                 }
             }
         }
@@ -297,36 +299,49 @@ public class DBOutputFormat<K extends DBWritable, V> implements OutputFormat<K, 
 
         Connection connection = dbConf.getConnection();
 
-        configureConnection(connection);
-
-        String sqlInsert = constructInsertQuery(tableName, fieldNames, replaceOnInsert);
-        PreparedStatement insertPreparedStatement;
-
+        boolean success = false;
         try {
-            insertPreparedStatement = connection.prepareStatement(sqlInsert);
-            insertPreparedStatement.setEscapeProcessing(true); // should be on by default
-        } catch (SQLException exception) {
-            throw new IOException("unable to create statement for: " + sqlInsert, exception);
-        }
+            configureConnection(connection);
 
-        String sqlUpdate =
-            updateNames != null ? constructUpdateQuery(tableName, fieldNames, updateNames) : null;
-        PreparedStatement updatePreparedStatement = null;
+            String sqlInsert = constructInsertQuery(tableName, fieldNames, replaceOnInsert);
+            PreparedStatement insertPreparedStatement;
 
-        try {
-            updatePreparedStatement =
-                sqlUpdate != null ? connection.prepareStatement(sqlUpdate) : null;
-        } catch (SQLException exception) {
-            throw new IOException("unable to create statement for: " + sqlUpdate, exception);
-        }
+            try {
+                insertPreparedStatement = connection.prepareStatement(sqlInsert);
+                insertPreparedStatement.setEscapeProcessing(true); // should be on by default
+            } catch (SQLException exception) {
+                throw new IOException("unable to create statement for: " + sqlInsert, exception);
+            }
 
-        if (insertPreparedStatement != null) {
-          LOG.info("Executing insert statement:\n " + sqlInsert);
+            String sqlUpdate =
+                updateNames != null ? constructUpdateQuery(tableName, fieldNames, updateNames) : null;
+            PreparedStatement updatePreparedStatement = null;
+
+            try {
+                updatePreparedStatement =
+                    sqlUpdate != null ? connection.prepareStatement(sqlUpdate) : null;
+            } catch (SQLException exception) {
+                throw new IOException("unable to create statement for: " + sqlUpdate, exception);
+            }
+
+            if (insertPreparedStatement != null) {
+              LOG.info("Executing insert statement:\n " + sqlInsert);
+            }
+            if (updatePreparedStatement != null) {
+              LOG.info("Executing update statement:\n " + sqlUpdate);
+            }
+            DBRecordWriter retval = new DBRecordWriter(connection, insertPreparedStatement, updatePreparedStatement, batchStatements);
+            success = true;
+            return retval;
+        } finally {
+            if ( !success ) {
+                try {
+                    connection.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Unable to close connection", sqe );
+                }
+            }
         }
-        if (updatePreparedStatement != null) {
-          LOG.info("Executing update statement:\n " + sqlUpdate);
-        }
-        return new DBRecordWriter(connection, insertPreparedStatement, updatePreparedStatement, batchStatements);
     }
 
     /**

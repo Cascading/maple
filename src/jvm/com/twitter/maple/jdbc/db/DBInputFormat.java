@@ -148,6 +148,14 @@ public class DBInputFormat<T extends DBWritable>
                 statement.close();
             } catch (SQLException exception) {
                 throw new IOException("unable to commit and close", exception);
+            } finally {
+                try {
+                    connection.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Closing the connection raised an exception", sqe );
+                } finally {
+                    connection = null;
+                }
             }
         }
 
@@ -291,6 +299,14 @@ public class DBInputFormat<T extends DBWritable>
         limit = dbConf.getInputLimit();
         maxConcurrentReads = dbConf.getMaxConcurrentReadsNum();
 
+        if ( connection != null ) {
+            try {
+                connection.close();
+            } catch ( SQLException sqe ) {
+                LOG.warn( "Error closing connection prior to getting new connection", sqe );
+            }
+        }
+
         try {
             connection = dbConf.getConnection();
         } catch (IOException exception) {
@@ -337,6 +353,13 @@ public class DBInputFormat<T extends DBWritable>
         try {
             return new DBRecordReader((DBInputSplit) split, inputClass, job);
         } catch (SQLException exception) {
+            if ( connection != null ) {
+                try {
+                    connection.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing connection", sqe );
+                }
+            }
             throw new IOException(exception.getMessage(), exception);
         }
     }
@@ -346,10 +369,12 @@ public class DBInputFormat<T extends DBWritable>
         // use the configured value if avail
         chunks = maxConcurrentReads == 0 ? chunks : maxConcurrentReads;
 
+        Statement statement = null;
+        ResultSet results = null;
         try {
-            Statement statement = connection.createStatement();
+            statement = connection.createStatement();
 
-            ResultSet results = statement.executeQuery(getCountQuery());
+            results = statement.executeQuery(getCountQuery());
 
             long count = 0;
 
@@ -362,7 +387,9 @@ public class DBInputFormat<T extends DBWritable>
             long chunkSize = (count / chunks);
 
             results.close();
+            results = null;
             statement.close();
+            statement = null;
 
             InputSplit[] splits = new InputSplit[chunks];
 
@@ -382,6 +409,21 @@ public class DBInputFormat<T extends DBWritable>
             return splits;
         } catch (SQLException e) {
             throw new IOException(e.getMessage());
+        } finally {
+            if ( results != null ) {
+                try {
+                    results.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing statement", sqe );
+                }
+            }
+            if ( statement != null ) {
+                try {
+                    statement.close();
+                } catch ( SQLException sqe ) {
+                    LOG.warn( "Error closing statement", sqe );
+                }
+            }
         }
     }
 

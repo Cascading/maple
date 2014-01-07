@@ -39,7 +39,7 @@ public class TupleRecord implements DBWritable {
 
     public void write( PreparedStatement statement ) throws SQLException {
         for( int i = 0; i < tuple.size(); i++ )
-            statement.setObject( i + 1, tuple.get( i ) );
+            statement.setObject( i + 1, tuple.getObject( i ) );
     }
 
     public void readFields( ResultSet resultSet ) throws SQLException {

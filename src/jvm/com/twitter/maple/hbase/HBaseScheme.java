@@ -31,7 +31,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,9 +58,9 @@ public class HBaseScheme
 
   /** String columns */
   private transient String[] columns;
-  /** Field fields */
-  private transient byte[][] fields;
 
+  /** Strict means there can't be missing values for declared fields **/
+  private boolean strict = true;
 
   /**
    * Constructor HBaseScheme creates a new HBaseScheme instance.
@@ -82,13 +81,7 @@ public class HBaseScheme
    * @param valueFields of type Fields[]
    */
   public HBaseScheme(Fields keyFields, String[] familyNames, Fields[] valueFields) {
-    this.keyField = keyFields;
-    this.familyNames = familyNames;
-    this.valueFields = valueFields;
-
-    setSourceSink(this.keyField, this.valueFields);
-
-    validate();
+    this(keyFields, familyNames, valueFields, true);
   }
 
   /**
@@ -108,8 +101,66 @@ public class HBaseScheme
    * @param valueFields of type Field[]
    */
   public HBaseScheme(Fields keyField, Fields[] valueFields) {
+    this(keyField, valueFields, true);
+  }
+  
+  /**
+   * Constructor HBaseScheme creates a new HBaseScheme instance.
+   * If strict is false, then missing values will be ignored.
+   *
+   * @param keyFields   of type Fields
+   * @param familyName  of type String
+   * @param valueFields of type Fields
+   * @param strict      of type boolean : If strict is false, then missing values for declared fields will be ignored.
+   */
+  public HBaseScheme(Fields keyFields, String familyName, Fields valueFields, boolean strict) {
+    this(keyFields, new String[]{familyName}, Fields.fields(valueFields), strict);
+  }
+
+  /**
+   * Constructor HBaseScheme creates a new HBaseScheme instance.
+   * If strict is false, then missing values will be ignored.
+   *
+   * @param keyFields   of type Fields
+   * @param familyNames of type String[]
+   * @param valueFields of type Fields[]
+   * @param strict      of type boolean
+   */
+  public HBaseScheme(Fields keyFields, String[] familyNames, Fields[] valueFields, boolean strict) {
+    this.keyField = keyFields;
+    this.familyNames = familyNames;
+    this.valueFields = valueFields;
+    this.strict = strict;
+
+    setSourceSink(this.keyField, this.valueFields);
+
+    validate();
+  }
+
+  /**
+   * Constructor HBaseScheme creates a new HBaseScheme instance using fully qualified column names.
+   * If strict is false, then missing values will be ignored.
+   *
+   * @param keyField    of type String
+   * @param valueFields of type Fields
+   * @param strict      of type boolean
+   */
+  public HBaseScheme(Fields keyField, Fields valueFields, boolean strict) {
+    this(keyField, Fields.fields(valueFields), strict);
+  }
+
+  /**
+   * Constructor HBaseScheme creates a new HBaseScheme instance using fully qualified column names.
+   * If strict is false, then missing values will be ignored.
+   *
+   * @param keyField    of type Field
+   * @param valueFields of type Field[]
+   * @param strict      of type boolean
+   */
+  public HBaseScheme(Fields keyField, Fields[] valueFields, boolean strict) {
     this.keyField = keyField;
     this.valueFields = valueFields;
+    this.strict = strict;
 
     validate();
 
@@ -224,9 +275,18 @@ public class HBaseScheme
         Tuple tuple = values.getTuple();
 
         ImmutableBytesWritable valueBytes = (ImmutableBytesWritable) tuple.getObject(j);
+        
+        if(!strict && valueBytes == null){
+            LOG.debug( String.format( "Ignoring missing value for field %s (strict is set to false).", fields.get( j ) ) );
+            continue;
+        }
+        
         put.add(Bytes.toBytes(familyNames[i]), Bytes.toBytes((String) fields.get(j)), valueBytes.get());
       }
     }
+    
+    if (put.isEmpty())
+        return;
 
     outputCollector.collect(null, put);
   }

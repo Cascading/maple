@@ -2,7 +2,7 @@
 
 which now hosts the HBase, MemoryTap, and Etsy LocalTap. For JDBC, please see: [Cascading-JDBC](https://github.com/Cascading/cascading-jdbc).
 
-The reason for this deprecation is purely due to the manangement cost of the extra repo. If the old code meets your needs, there is little reason to upgrade.
+The reason for this deprecation is purely due to the management cost of the extra repo. If the old code meets your needs, there is little reason to upgrade.
 
 # maple
 
